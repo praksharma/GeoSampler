@@ -6,13 +6,14 @@ import json
 from PySide6.QtCore import QProcess, QSettings, Qt
 from PySide6.QtGui import QActionGroup
 from PySide6.QtWidgets import (QApplication, QComboBox, QDockWidget, QLabel,
-    QMainWindow, QMessageBox, QToolBar, QTreeWidget, QTreeWidgetItem, QFileDialog, QAbstractItemView, QScrollArea, QSizePolicy)
+    QMainWindow, QMessageBox, QToolBar, QTreeWidget, QTreeWidgetItem, QFileDialog, QAbstractItemView, QScrollArea, QSizePolicy, QSplitter)
 from . import __version__
 from .theme import configure_theme
 from .viewport import Viewport
 from .graphics import configure_graphics
 from .window_controls import install_window_controls
 from .sampling_panel import SamplingPanel
+from .sampled_areas import SampledAreasTree, area_details
 
 
 class MainWindow(QMainWindow):
@@ -72,7 +73,14 @@ class MainWindow(QMainWindow):
         tree.itemSelectionChanged.connect(self.tree_selection_changed)
         tree.setHeaderHidden(True)
         tree.addTopLevelItems([QTreeWidgetItem(["Geometry"]), QTreeWidgetItem(["Regions"])])
-        self.geometry_dock = self.dock("Geometry and Regions", "geometry", tree, Qt.DockWidgetArea.LeftDockWidgetArea)
+        self.sampled_areas = SampledAreasTree()
+        self.sampled_areas.areaSelected.connect(self.show_sampled_area)
+        self.left_splitter = QSplitter(Qt.Orientation.Vertical)
+        self.left_splitter.addWidget(tree)
+        self.left_splitter.addWidget(self.sampled_areas)
+        self.left_splitter.setChildrenCollapsible(False)
+        self.left_splitter.setSizes([350, 350])
+        self.geometry_dock = self.dock("Geometry and Sampled Areas", "geometry", self.left_splitter, Qt.DockWidgetArea.LeftDockWidgetArea)
         properties = QLabel("No geometry selected.")
         self.properties = properties
         properties.setWordWrap(True)
@@ -80,14 +88,8 @@ class MainWindow(QMainWindow):
         properties.setMargin(16)
         properties.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.properties_dock = self.dock("Properties", "properties", self.scrollable_text(properties), Qt.DockWidgetArea.RightDockWidgetArea)
-        results = QLabel("No samples generated.")
-        self.sample_results = results
-        results.setWordWrap(True)
-        results.setTextFormat(Qt.TextFormat.PlainText)
-        results.setMargin(16)
-        self.results_dock = self.dock("Results", "results", self.scrollable_text(results), Qt.DockWidgetArea.BottomDockWidgetArea)
-        self.results_dock.hide()
         self.sampling = SamplingPanel(self)
+        self.sampled_areas.visibilityChanged.connect(self.sampling.refresh_style)
         self.sampling_dock = self.dock("Sampling", "sampling", self.sampling, Qt.DockWidgetArea.RightDockWidgetArea)
         self.tabifyDockWidget(self.properties_dock, self.sampling_dock)
         self.sampling_dock.raise_()
@@ -131,6 +133,14 @@ class MainWindow(QMainWindow):
         self.view_menu.addAction(dock.toggleViewAction())
         return dock
 
+    def show_sampled_area(self, label):
+        area, status = self.sampled_areas.areas[label]
+        text = label + '\n\n' + '\n'.join(area_details(area, status))
+        if area.get('notes'):
+            text += '\n\n' + '\n'.join(area['notes'])
+        self.properties.setText(text)
+        self.properties_dock.raise_()
+
     def export_samples(self):
         if not self.sampling.batches or self.sampling.process:
             return
@@ -160,11 +170,10 @@ class MainWindow(QMainWindow):
 
     def reset_layout(self):
         for dock, area in ((self.geometry_dock, Qt.DockWidgetArea.LeftDockWidgetArea),
-                           (self.properties_dock, Qt.DockWidgetArea.RightDockWidgetArea),
-                           (self.results_dock, Qt.DockWidgetArea.BottomDockWidgetArea)):
+                           (self.properties_dock, Qt.DockWidgetArea.RightDockWidgetArea)):
             dock.setFloating(False)
             self.addDockWidget(area, dock)
-            dock.setVisible(dock is not self.results_dock)
+            dock.show()
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.toolbar)
         self.toolbar.show()
         self.sampling_dock.setFloating(False)

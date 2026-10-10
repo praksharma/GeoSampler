@@ -4,7 +4,7 @@ import math
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, Qt
 from geosampler.app import MainWindow
 import unittest
 import test_shell
@@ -28,6 +28,8 @@ class GeometryTest(unittest.TestCase):
         return [size[0]/2+point[0]*scale,size[1]/2-point[1]*scale]
 
     def click(self, window, point, extend=False):
+        self.javascript(window, 'window.pickFrame=false; requestAnimationFrame(()=>requestAnimationFrame(()=>window.pickFrame=true)); true')
+        self.wait_for(lambda: self.javascript(window, 'window.pickFrame'))
         x,y=self.project(window,point)
         self.javascript(window, f'''(()=>{{const c=document.querySelector('canvas');
           for(const type of ['pointerdown','pointerup'])c.dispatchEvent(new PointerEvent(type,
@@ -74,7 +76,7 @@ class GeometryTest(unittest.TestCase):
                 self.assertEqual(self.javascript(window, 'window.geoViewer.diagnostics().sampleCount'),128)
                 self.assertEqual(window.sampling.batches[0]['coordinates'],coordinates)
                 window.sampling.show_points.setChecked(True)
-                self.assertTrue(window.results_dock.isVisible())
+                self.assertIn('inner_outer_edges',window.sampled_areas.items)
                 window.sampling.clear_batches()
                 self.wait_for(lambda: self.javascript(window, 'window.geoViewer.diagnostics().sampleCount')==0)
                 # A drag that returns to its starting point must not select.
@@ -144,8 +146,25 @@ class GeometryTest(unittest.TestCase):
                 self.assertEqual(window.sampling.next_available_label('boundary_1'),'boundary_2')
                 self.assertEqual(window.sampling.next_available_label('inlet'),'inlet')
                 self.wait_for(lambda: self.javascript(window, 'window.geoViewer.diagnostics().sampleCount')==256)
-                self.assertIn('Face 1',window.sample_results.text())
-                self.assertIn('Face 6',window.sample_results.text())
+                areas = window.sampled_areas
+                self.assertEqual(areas.root.childCount(),2)
+                first = areas.items['boundary']
+                second = areas.items['boundary_1']
+                self.assertEqual(first.child(0).text(0),'Entities: Face 1')
+                self.assertEqual(second.child(0).text(0),'Entities: Face 6')
+                self.assertEqual(second.child(1).text(0),'Points: 128')
+                self.assertEqual(second.child(4).text(0),'Status: Generated')
+                areas.setCurrentItem(second.child(0))
+                self.assertIn('boundary_1',window.properties.text())
+                self.assertIn('Face 6',window.properties.text())
+                second.setCheckState(0,Qt.CheckState.Unchecked)
+                self.wait_for(lambda: self.javascript(window, 'window.geoViewer.diagnostics().visibleSampleCount')==128)
+                window.sampling.show_points.setChecked(False)
+                self.wait_for(lambda: self.javascript(window, 'window.geoViewer.diagnostics().visibleSampleCount')==0)
+                window.sampling.show_points.setChecked(True)
+                self.wait_for(lambda: self.javascript(window, 'window.geoViewer.diagnostics().visibleSampleCount')==128)
+                window.sampling.point_size.setValue(8)
+                self.assertEqual(window.sampled_areas.hidden_labels(),['boundary_1'])
                 self.assertTrue(window.export_action.isEnabled())
                 self.assertTrue(window.sampling.export.isEnabled())
                 # Save the actual sampled faces through both GUI export options.
@@ -171,6 +190,7 @@ class GeometryTest(unittest.TestCase):
                     warning.assert_called_once()
                 self.assertEqual(len(window.sampling.batches),2)
                 window.sampling.clear_batches()
+                self.assertFalse(window.sampled_areas.items)
                 self.assertFalse(window.export_action.isEnabled())
                 self.assertFalse(window.sampling.export.isEnabled())
                 window.sampling.target.setCurrentIndex(1)
@@ -188,4 +208,5 @@ class GeometryTest(unittest.TestCase):
                 self.wait_for(lambda: window.sampling.process is None)
                 self.assertEqual(len(window.sampling.batches),1)
                 self.assertEqual(window.sampling.label.text(),'cancelled')
+                self.assertEqual(window.sampled_areas.items['cancelled'].child(4).text(0),'Status: Not generated (cancelled)')
             finally:window.close()

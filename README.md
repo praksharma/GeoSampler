@@ -5,7 +5,7 @@ Geometry-aware point sampling for PINNs and scientific machine learning.
 **Current status:** import Gmsh `.geo` geometry, inspect it in the offline 3D
 viewport, and select original faces or edges using separate tools. Includes
 synchronized tree selection, multi-selection, imported group information,
-dockable panes and light/dark themes. Generate labelled datasets with seven
+dockable panes, a Sampled Areas tree and light/dark themes. Generate labelled datasets with seven
 sampling methods, preview interior or boundary coordinates, and export labelled
 xarray/NetCDF or NumPy NPZ arrays. Region editing is planned.
 
@@ -24,7 +24,8 @@ Drag to orbit, right-drag to pan, and scroll to zoom.
 
 Open the **Sampling** tab on the right. Choose selected faces/edges, an imported
 group, or the domain interior; set the method, count, seed, and dataset label;
-then click **Generate samples**. Multiple datasets can be previewed together.
+then click **Generate samples**. The **Sampled Areas** tree lists each dataset
+and its details; check or uncheck labels to show or hide their points.
 Use **Export samples** in the Sampling pane or File menu to save all datasets
 as NetCDF (default) or NPZ. Each label is an independent coordinate array.
 Methods: random, regular grid, LHS, Sobol, Halton, Hammersley, and stratified.

@@ -14,10 +14,12 @@ contains the boundary partitions; GeoSampler does not create or edit them.
 
 - [x] Initialise package and Git repository.
 - [x] Reuse PyniteGUI's offline renderer, orientation gizmo and Qt appearance.
-- [x] Empty 3D viewport with dockable left/right panes and optional Results pane.
+- [x] 3D viewport with dockable left/right panes and a Sampled Areas tree.
 - [x] Menus, camera controls, grid/axes toggles, themes and layout persistence.
 - [x] Hide the reference grid by default to keep geometry unobstructed.
-- [x] Scrollable Properties and Results alongside Sampling and the geometry tree.
+- [x] Scrollable Properties alongside Sampling and the geometry tree.
+- [x] Replace the Results dock with a Sampled Areas tree, per-dataset visibility,
+      generation status and region details in Properties.
 - [x] Remove structural-analysis tools and dependencies.
 - [x] Add source-attributed CFDBench annulus and sphere geometry fixtures.
 - [x] Verify face/edge identity, physical groups and display tessellation with Gmsh.

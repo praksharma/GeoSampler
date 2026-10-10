@@ -4,8 +4,8 @@ import time
 import unittest
 from pathlib import Path
 
-from PySide6.QtCore import QSettings
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QSettings, Qt
+from PySide6.QtWidgets import QApplication, QDockWidget, QLabel
 from geosampler.app import MainWindow
 from geosampler.theme import configure_theme
 from geosampler.graphics import configure_graphics
@@ -42,7 +42,8 @@ class ShellTest(unittest.TestCase):
             try:
                 self.wait_for(lambda: window.view.is_ready or not window.view.error.isHidden())
                 self.assertTrue(window.view.is_ready, window.view.error.text())
-                self.assertTrue(window.results_dock.isHidden())
+                self.assertFalse(any(d.objectName()=='results' for d in window.findChildren(QDockWidget)))
+                self.assertEqual(window.sampled_areas.root.text(0),'Sampled Areas')
                 self.assertTrue(window.geometry_dock.isVisible())
                 self.assertTrue(window.properties_dock.isVisible())
                 self.assertTrue(self.javascript(window, 'window.geoFailure === null'))
@@ -55,16 +56,21 @@ class ShellTest(unittest.TestCase):
                 window.set_visibility('show_grid', False)
                 window.set_visibility('show_axes', False)
                 self.assertFalse(window.view.show_grid)
-                window.results_dock.show()
+                # Restore a legacy saved layout that had a visible Results dock.
+                legacy_results = QDockWidget('Results',window)
+                legacy_results.setObjectName('results')
+                legacy_results.setWidget(QLabel('Legacy results'))
+                window.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,legacy_results)
+                legacy_results.show()
                 window.close()
                 self.assertTrue(settings.contains('layout'))
                 reopened = MainWindow(settings)
                 reopened.show()
                 try:
                     self.assertEqual(reopened.sampling.point_size.value(),10)
-                    self.assertTrue(reopened.results_dock.isVisible())
+                    self.assertFalse(any(d.objectName()=='results' for d in reopened.findChildren(QDockWidget)))
                     reopened.reset_layout()
-                    self.assertTrue(reopened.results_dock.isHidden())
+                    self.assertTrue(reopened.geometry_dock.isVisible())
                 finally:
                     reopened.close()
             finally:

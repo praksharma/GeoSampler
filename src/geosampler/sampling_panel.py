@@ -174,6 +174,8 @@ class SamplingPanel(QWidget):
         process = QProcess(self)
         self.process = process
         self.cancelled = False
+        self.pending_area = request
+        self.window.sampled_areas.set_area(request, 'Generating')
         self.set_busy(True)
         self.summary.setText('Generating samples…')
         self.window.statusBar().showMessage('Generating samples…')
@@ -193,6 +195,7 @@ class SamplingPanel(QWidget):
         self.set_busy(False)
         try:
             if self.cancelled:
+                self.window.sampled_areas.set_area(self.pending_area, 'Not generated (cancelled)')
                 self.summary.setText('Generation cancelled. Existing datasets retained.')
                 return
             if code:
@@ -201,16 +204,13 @@ class SamplingPanel(QWidget):
             if batch['document'] != self.window.geometry['document']:
                 raise ValueError('The geometry changed during generation.')
             self.batches.append(batch)
+            self.window.sampled_areas.set_area(batch)
             self.label.setText(self.next_available_label(batch['label']))
             self.summary.setText(f"{batch['label']}: {batch['count']} points\n" + '\n'.join(batch['notes']))
             self.refresh_preview()
-            self.window.results_dock.show()
-            self.window.sample_results.setText('\n\n'.join(
-                f"{b['label']} · {METHODS[b['method']]}\n{b['count']} points · Seed {b['seed']}\n" +
-                ', '.join(f"{'Edge' if d == 1 else 'Face' if d == 2 else 'Volume'} {t}" for d, t in b['entities'])
-                for b in self.batches))
             self.window.statusBar().showMessage(f"Generated {batch['count']} points for {batch['label']}")
         except (ValueError, KeyError) as error:
+            self.window.sampled_areas.set_area(self.pending_area, 'Not generated (failed)')
             self.summary.setText('Generation failed. Existing datasets retained.')
             QMessageBox.warning(self, 'Sampling failed', str(error))
         finally:
@@ -230,13 +230,15 @@ class SamplingPanel(QWidget):
 
     def clear_batches(self):
         self.batches.clear()
+        self.window.sampled_areas.clear_areas()
         self.refresh_preview()
-        self.window.sample_results.setText('No samples generated.')
         self.summary.setText('No generated datasets.')
+        self.window.update_selection()
 
     def preview_style(self):
         return {'visible': self.show_points.isChecked(),
-                'through': self.through.isChecked(), 'size': self.point_size.value()}
+                'through': self.through.isChecked(), 'size': self.point_size.value(),
+                'hiddenLabels': self.window.sampled_areas.hidden_labels()}
 
     def refresh_style(self):
         self.size_label.setText(f'{self.point_size.value()} px')

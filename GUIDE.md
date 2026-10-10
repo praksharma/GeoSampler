@@ -8,13 +8,15 @@ The reference grid is hidden by default. Use Grid to show it in the XY plane
 when needed. Grid and axes can be toggled independently.
 Reset view returns to the default isometric camera; it fits the loaded geometry.
 
-Left: Geometry and Regions. Right: Properties. Bottom: optional Results pane.
-Properties, Sampling and Results scroll within their panes when content grows;
-the geometry tree also has scrollbars. Selecting many entities keeps neighbouring
-panes available. Properties and Results text can be selected and copied.
+Left: Geometry and Sampled Areas. Right: Properties and Sampling. The left pane
+contains independently scrollable geometry and sampled-area trees; drag their
+divider to adjust their heights. Properties and Sampling scroll within their
+panes when content grows. Selecting many entities keeps neighbouring panes
+available. Properties text can be selected and copied. There is no bottom Results
+pane; older saved layouts do not recreate it.
 Use View to show/hide panes; drag their titles to rearrange or detach them.
 View → Reset layout restores the initial layout. Window geometry, panel layout,
-and theme persist between launches. The Results pane starts hidden on first launch.
+and theme persist between launches. Sampled datasets are held in memory until exported.
 
 ## Architecture
 
@@ -123,7 +125,7 @@ available numbered name: `boundary`, `boundary_1`, `boundary_2`, and so on.
 Existing names are skipped; manually reusing a name also selects an available
 numbered variant. You can enter a different base name at any time. Failed or
 cancelled generation does not advance the suggested name. Each generation adds
-a separate dataset and preserves earlier coordinates and entity tags. Results
+a separate dataset and preserves earlier coordinates and entity tags. Sampled Areas
 lists the generated datasets with their source entities.
 
 Methods implemented:
@@ -259,3 +261,22 @@ with np.load('samples.npz', allow_pickle=False) as data:
 Validation covers unequal array lengths, exact coordinate/tag round trips,
 Unicode/reserved labels, invalid data, preservation of existing files on save
 failure, and both export options from the actual sampled-face UI workflow.
+
+
+## Sampled Areas tree
+
+The lower part of the left pane replaces the former bottom Results dock. Each
+label expands to Entities, Points, Method, Seed and Status. Generated point
+counts include thousands separators. Check a generated label to show its points;
+uncheck it to hide only that dataset. The global Show sample points control
+still hides all previews and preserves individual visibility choices when turned
+back on. Point-size and through-geometry settings respect those choices too.
+Export always includes all generated datasets, even hidden ones.
+
+Selecting a label or one of its detail rows shows its metadata and approximation
+notes in Properties. This does not change the active CAD entity selection or
+sampling settings. A running request appears with status Generating; a cancelled
+or failed request remains as Not generated, with no visibility checkbox or
+exported coordinates. These entries represent attempted runs, not saved region
+configurations. Clear generated datasets clears the tree, including unfinished
+attempts; replacing geometry clears it as well.
