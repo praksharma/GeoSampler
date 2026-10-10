@@ -16,7 +16,8 @@
 - [ ] xarray/NetCDF and NPZ export; no Parquet.
 - [ ] Save/load reproducible sampling projects.
 - [x] Add source-attributed 2D annulus and 3D sphere fixtures from CFDBench.
-- [ ] Validate fixtures with the future geometry importer.
+- [x] Verify face/edge identity, physical groups and display tessellation with Gmsh.
+- [ ] Implement importer and verify viewport face/edge picking.
 - [ ] Installation validation and release documentation.
 
 ## Later

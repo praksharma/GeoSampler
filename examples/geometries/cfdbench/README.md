@@ -16,10 +16,25 @@ The annulus has physical curve groups 1 (inner) and 2 (outer), plus surface
 100. These identifiers describe geometry groups, not prescribed BC values.
 
 These are geometry/meshing scripts, not STEP files or pre-generated meshes.
-They have been source-inspected and download-verified, but not executed or
-geometrically validated with Gmsh. GeoSampler's current shell has no importer yet.
-Future validation should check the annulus's loop ordering and resulting domain,
-as well as curved-surface construction and normal orientation, before sampling.
+Backend checks passed with Gmsh 4.15.2 on 2026-10-10. Every face and edge
+can be addressed and isolated independently, with nonempty per-entity display
+tessellation. The annulus has 8 edges and 1 face; the sphere has 12 edges and
+8 faces. Existing physical groups survive loading. Sphere surface mesh nodes
+lie on the unit sphere within 1e-8; annulus surface mesh nodes lie between
+radii 0.5 and 1 within 1e-8. These node checks do not certify full domain
+containment, normals, mesh quality, or sampling distributions.
+
+Full results: entity-check.json. Reproduce from the repository root:
+
+```sh
+uv run --with gmsh==4.15.2 python scripts/check_geo_entities.py
+```
+
+GeoSampler's current shell still has no importer or mouse-picking interface.
+When implementing it, preserve `(dimension, tag)` for every rendered entity:
+triangle hits map to faces, line-segment hits map to edges. Physical groups
+combine entities without removing their individual identities. Tags identify
+entities in the loaded model; do not assume they survive arbitrary CAD edits.
 
 ## Upstream licence and credit
 

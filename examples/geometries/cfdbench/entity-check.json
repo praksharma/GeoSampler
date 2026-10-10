@@ -1,0 +1,688 @@
+{
+  "gmsh_version": "4.15.2",
+  "cases": [
+    {
+      "file": "annulus_unstructured.geo",
+      "counts": {
+        "0": 10,
+        "1": 8,
+        "2": 1,
+        "3": 0
+      },
+      "groups": [
+        {
+          "dimension": 0,
+          "tag": 1,
+          "entities": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "dimension": 0,
+          "tag": 2,
+          "entities": [
+            6,
+            7,
+            8,
+            9,
+            10
+          ]
+        },
+        {
+          "dimension": 1,
+          "tag": 1,
+          "entities": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": 1,
+          "tag": 2,
+          "entities": [
+            5,
+            6,
+            7,
+            8
+          ]
+        },
+        {
+          "dimension": 2,
+          "tag": 100,
+          "entities": [
+            1
+          ]
+        }
+      ],
+      "entities": [
+        {
+          "dimension": 1,
+          "tag": 1,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "display_elements": 16,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 2,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              3
+            ]
+          ],
+          "display_elements": 16,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 3,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              3
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "display_elements": 16,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 4,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "display_elements": 16,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 5,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              6
+            ],
+            [
+              0,
+              7
+            ]
+          ],
+          "display_elements": 16,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 6,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              7
+            ],
+            [
+              0,
+              8
+            ]
+          ],
+          "display_elements": 16,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 7,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              8
+            ],
+            [
+              0,
+              9
+            ]
+          ],
+          "display_elements": 16,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 8,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              6
+            ],
+            [
+              0,
+              9
+            ]
+          ],
+          "display_elements": 16,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 2,
+          "tag": 1,
+          "type": "Plane",
+          "boundary": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              1,
+              6
+            ],
+            [
+              1,
+              7
+            ],
+            [
+              1,
+              8
+            ]
+          ],
+          "display_elements": 1200,
+          "individually_addressable": true
+        }
+      ],
+      "surface_node_radius_range": [
+        0.49999999999999994,
+        1.0
+      ]
+    },
+    {
+      "file": "sphere_unstructured.geo",
+      "counts": {
+        "0": 7,
+        "1": 12,
+        "2": 8,
+        "3": 1
+      },
+      "groups": [
+        {
+          "dimension": 0,
+          "tag": 1,
+          "entities": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        {
+          "dimension": 1,
+          "tag": 1,
+          "entities": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "dimension": 2,
+          "tag": 1,
+          "entities": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ]
+        },
+        {
+          "dimension": 3,
+          "tag": 100,
+          "entities": [
+            1
+          ]
+        }
+      ],
+      "entities": [
+        {
+          "dimension": 1,
+          "tag": 1,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              3
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 2,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              3
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 3,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              5
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 4,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              5
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 5,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              5
+            ],
+            [
+              0,
+              6
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 6,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              3
+            ],
+            [
+              0,
+              6
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 7,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              3
+            ],
+            [
+              0,
+              7
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 8,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              5
+            ],
+            [
+              0,
+              7
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 9,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              6
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 10,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              6
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 11,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              7
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 1,
+          "tag": 12,
+          "type": "Circle",
+          "boundary": [
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              7
+            ]
+          ],
+          "display_elements": 8,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 2,
+          "tag": 1,
+          "type": "Surface",
+          "boundary": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              7
+            ],
+            [
+              1,
+              12
+            ]
+          ],
+          "display_elements": 114,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 2,
+          "tag": 2,
+          "type": "Surface",
+          "boundary": [
+            [
+              1,
+              4
+            ],
+            [
+              1,
+              8
+            ],
+            [
+              1,
+              12
+            ]
+          ],
+          "display_elements": 114,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 2,
+          "tag": 3,
+          "type": "Surface",
+          "boundary": [
+            [
+              1,
+              4
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              1,
+              9
+            ]
+          ],
+          "display_elements": 114,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 2,
+          "tag": 4,
+          "type": "Surface",
+          "boundary": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              6
+            ],
+            [
+              1,
+              9
+            ]
+          ],
+          "display_elements": 114,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 2,
+          "tag": 5,
+          "type": "Surface",
+          "boundary": [
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              7
+            ],
+            [
+              1,
+              11
+            ]
+          ],
+          "display_elements": 114,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 2,
+          "tag": 6,
+          "type": "Surface",
+          "boundary": [
+            [
+              1,
+              3
+            ],
+            [
+              1,
+              8
+            ],
+            [
+              1,
+              11
+            ]
+          ],
+          "display_elements": 114,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 2,
+          "tag": 7,
+          "type": "Surface",
+          "boundary": [
+            [
+              1,
+              3
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              1,
+              10
+            ]
+          ],
+          "display_elements": 114,
+          "individually_addressable": true
+        },
+        {
+          "dimension": 2,
+          "tag": 8,
+          "type": "Surface",
+          "boundary": [
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              6
+            ],
+            [
+              1,
+              10
+            ]
+          ],
+          "display_elements": 114,
+          "individually_addressable": true
+        }
+      ],
+      "surface_node_radius_range": [
+        0.9999999999999998,
+        1.0000000000000002
+      ]
+    }
+  ]
+}
