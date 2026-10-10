@@ -204,6 +204,38 @@ class GeometryTest(unittest.TestCase):
                 self.assertEqual(window.geometry['document'],document)
                 self.assertEqual(json.dumps(window.sampling.batches),before_batches)
                 self.assertEqual(window.sampled_areas.hidden_labels(),['boundary_1'])
+                # Individual face masks preserve CAD selection and all sample coordinates.
+                window.face_menu().actions()[0].trigger()
+                self.wait_for(lambda: self.javascript(window,'window.geoViewer.diagnostics().visibleFaces')==7)
+                self.assertEqual(window.selection,before_selection)
+                window.face_menu().actions()[1].trigger()
+                self.wait_for(lambda: self.javascript(window,'window.geoViewer.diagnostics().visibleFaces')==1)
+                window.face_menu().actions()[-1].trigger()
+                self.wait_for(lambda: self.javascript(window,'window.geoViewer.diagnostics().visibleFaces')==8)
+                self.assertEqual(json.dumps(window.sampling.batches),before_batches)
+                # A hidden, isolated region keeps its state when recoloured and renamed.
+                from PySide6.QtGui import QColor
+                window.show_sampled_area('boundary_1')
+                window.isolate_action.setChecked(True)
+                with patch('geosampler.app.QColorDialog.getColor',return_value=QColor('#ffc857')):
+                    window.area_menu('boundary_1').actions()[1].trigger()
+                self.wait_for(lambda: self.javascript(window,
+                    "window.geoViewer.diagnostics().sampleColours.boundary_1")=='#ffc857')
+                with patch('geosampler.app.QInputDialog.getText',return_value=('outlet',True)):
+                    window.area_menu('boundary_1').actions()[0].trigger()
+                self.assertEqual(window.selected_area,'outlet')
+                self.assertEqual(window.isolated_label(),'outlet')
+                self.assertEqual(window.sampled_areas.hidden_labels(),['outlet'])
+                self.assertEqual(window.sampling.batches[1]['colour'],'#ffc857')
+                self.assertEqual(window.sampling.batches[1]['coordinates'],json.loads(before_batches)[1]['coordinates'])
+                self.wait_for(lambda: self.javascript(window,
+                    "window.geoViewer.diagnostics().sampleColours.outlet")=='#ffc857')
+                for answer in [('boundary',True),('',True),('ignored',False)]:
+                    with patch('geosampler.app.QInputDialog.getText',return_value=answer), patch('geosampler.app.QMessageBox.warning') as warning:
+                        window.rename_area('outlet')
+                        self.assertEqual(warning.call_count, int(answer[1]))
+                    self.assertIn('outlet',window.sampled_areas.items)
+                window.isolate_action.setChecked(False)
                 self.assertTrue(window.export_action.isEnabled())
                 self.assertTrue(window.sampling.export.isEnabled())
                 # Save the actual sampled faces through both GUI export options.
@@ -213,14 +245,15 @@ class GeometryTest(unittest.TestCase):
                 with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=(str(nc_path),'NetCDF (*.nc)')):
                     window.export_action.trigger()
                 with xr.open_dataset(nc_path, engine='scipy') as exported:
-                    self.assertEqual(set(exported.data_vars),{'boundary','boundary_1'})
+                    self.assertEqual(set(exported.data_vars),{'boundary','outlet'})
                     for batch in window.sampling.batches:
                         np.testing.assert_array_equal(exported[batch['label']].values,batch['coordinates'])
+                        self.assertEqual(json.loads(exported[batch['label']].attrs['metadata_json'])['colour'],batch['colour'])
                 npz_path = Path(directory)/'sphere_samples'
                 with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=(str(npz_path),'NumPy archive (*.npz)')):
                     window.sampling.export.click()
                 with np.load(npz_path.with_suffix('.npz'), allow_pickle=False) as exported:
-                    self.assertEqual(exported['boundary_1'].shape,(128,3))
+                    self.assertEqual(exported['outlet'].shape,(128,3))
                 with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=('','')), patch('geosampler.export.export_samples') as exporter:
                     window.export_samples()
                     exporter.assert_not_called()

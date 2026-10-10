@@ -25,12 +25,14 @@ const raycaster=new THREE.Raycaster();
 const key=o=>`${o.userData.dimension}:${o.userData.tag}`;
 let palette={face:0x75a8b5,edge:0x304650};
 let sampleObjects=[];
-let geometryVisibility={geometry:true,faces:true,edges:true,isolatedEntities:null};
+let geometryVisibility={geometry:true,faces:true,edges:true,isolatedEntities:null,hiddenFaces:[],isolatedFaces:null};
 function setGeometryVisibility(config){
   geometryVisibility={...geometryVisibility,...config};
   const region=geometryVisibility.isolatedEntities===null?null:new Set(geometryVisibility.isolatedEntities.map(([d,t])=>`${d}:${t}`));
   for(const object of objects){
-    object.visible=geometryVisibility.geometry&&(object.userData.dimension===2?geometryVisibility.faces:geometryVisibility.edges)&&(!region||region.has(key(object)));
+    object.visible=geometryVisibility.geometry&&(object.userData.dimension===2?geometryVisibility.faces:geometryVisibility.edges)&&(!region||region.has(key(object)))
+      &&(object.userData.dimension!==2||(!geometryVisibility.hiddenFaces.includes(object.userData.tag)
+      &&(geometryVisibility.isolatedFaces===null||geometryVisibility.isolatedFaces.includes(object.userData.tag))));
   }
   hover=null;recolor();
 }
@@ -132,10 +134,11 @@ const pointContext=pointCanvas.getContext('2d');
 pointContext.fillStyle='#151515';pointContext.beginPath();pointContext.arc(32,32,30,0,Math.PI*2);pointContext.fill();
 pointContext.fillStyle='#ffffff';pointContext.beginPath();pointContext.arc(32,32,23,0,Math.PI*2);pointContext.fill();
 const pointTexture=new THREE.CanvasTexture(pointCanvas);pointTexture.colorSpace=THREE.SRGBColorSpace;
-let sampleStyle={size:7,visible:true,through:true,hiddenLabels:[],isolatedLabel:null};
+let sampleStyle={size:7,visible:true,through:true,hiddenLabels:[],isolatedLabel:null,colours:{}};
 function setSampleStyle(config){
   sampleStyle={...sampleStyle,...config};
   for(const object of sampleObjects){
+    object.material.color.set(sampleStyle.colours[object.userData.label]??object.userData.defaultColour);
     object.material.size=sampleStyle.size;
     object.material.depthTest=!sampleStyle.through;
     object.visible=sampleStyle.visible&&!sampleStyle.hiddenLabels.includes(object.userData.label)&&(!sampleStyle.isolatedLabel||sampleStyle.isolatedLabel===object.userData.label);
@@ -149,16 +152,16 @@ function setSamples(config){
     const geometry=new THREE.BufferGeometry();
     geometry.setAttribute('position',new THREE.Float32BufferAttribute(batch.coordinates.flat(),3));
     const object=new THREE.Points(geometry,new THREE.PointsMaterial({color:colors[index%colors.length],map:pointTexture,alphaTest:0.15,sizeAttenuation:false,depthWrite:false}));
-    object.userData.label=batch.label;object.renderOrder=2;
+    object.userData.label=batch.label;object.userData.defaultColour=colors[index%colors.length];object.renderOrder=2;
     scene.add(object);sampleObjects.push(object);
   }
-  setSampleStyle({size:config.size??7,visible:config.visible,through:config.through,hiddenLabels:config.hiddenLabels??[],isolatedLabel:config.isolatedLabel??null});
+  setSampleStyle({size:config.size??7,visible:config.visible,through:config.through,hiddenLabels:config.hiddenLabels??[],isolatedLabel:config.isolatedLabel??null,colours:config.colours??{}});
 }
 function diagnostics(){
   const gl=renderer.getContext(),extension=gl.getExtension('WEBGL_debug_renderer_info');
   return {renderer:gl.getParameter(extension?extension.UNMASKED_RENDERER_WEBGL:gl.RENDERER),
     vendor:gl.getParameter(extension?extension.UNMASKED_VENDOR_WEBGL:gl.VENDOR),
-    version:gl.getParameter(gl.VERSION),lost:gl.isContextLost(),visibleFaces:faces.filter(o=>o.visible).length,visibleEdges:edges.filter(o=>o.visible).length,selectionCount:selected.size,pointSize:sampleStyle.size,sampleVisible:sampleStyle.visible,visibleSampleCount:sampleObjects.reduce((n,o)=>n+(o.visible?o.geometry.attributes.position.count:0),0),sampleCount:sampleObjects.reduce((n,o)=>n+o.geometry.attributes.position.count,0)};
+    version:gl.getParameter(gl.VERSION),lost:gl.isContextLost(),visibleFaces:faces.filter(o=>o.visible).length,visibleEdges:edges.filter(o=>o.visible).length,sampleColours:Object.fromEntries(sampleObjects.map(o=>[o.userData.label,`#${o.material.color.getHexString()}`])),selectionCount:selected.size,pointSize:sampleStyle.size,sampleVisible:sampleStyle.visible,visibleSampleCount:sampleObjects.reduce((n,o)=>n+(o.visible?o.geometry.attributes.position.count:0),0),sampleCount:sampleObjects.reduce((n,o)=>n+o.geometry.attributes.position.count,0)};
 }
 window.geoViewer={orient,appearance,loadGeometry,setMode,setSelection,setGeometryVisibility,setSamples,setSampleStyle,diagnostics,reset:()=>orient(0)};
 renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();window.geoReportFailure('Graphics context lost. Restart the application.');});

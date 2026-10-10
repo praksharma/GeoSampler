@@ -1,7 +1,10 @@
 """Sampled-region tree and independent point visibility controls."""
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem
+from PySide6.QtGui import QColor, QIcon, QPixmap
 from .sampling_methods import METHODS
+
+REGION_COLOURS = ("#fff6dc", "#83e5ed", "#b5ef86", "#aabfff", "#ffffff")
 
 ENTITY_NAMES = {1: 'Edge', 2: 'Face', 3: 'Volume'}
 
@@ -56,6 +59,13 @@ class SampledAreasTree(QTreeWidget):
         else:
             visible = item.checkState(0) == Qt.CheckState.Checked or self.areas[label][1] != 'Generated'
             item.takeChildren()
+        if status == 'Generated':
+            if 'colour' not in area:
+                index = sum(s == 'Generated' for key, (_, s) in self.areas.items() if key != label)
+                area['colour'] = REGION_COLOURS[index % len(REGION_COLOURS)]
+            swatch = QPixmap(16, 16)
+            swatch.fill(QColor(area['colour']))
+            item.setIcon(0, QIcon(swatch))
         self.areas[label] = (area, status)
         flags = item.flags()
         if status == 'Generated':
@@ -72,6 +82,21 @@ class SampledAreasTree(QTreeWidget):
         self.blockSignals(False)
         if self.currentItem() is item:
             self.areaSelected.emit(label)
+
+    def rename_area(self, old, new):
+        area, status = self.areas.pop(old)
+        item = self.items.pop(old)
+        area['label'] = new
+        self.areas[new] = (area, status)
+        self.items[new] = item
+        self.blockSignals(True)
+        item.setText(0, new)
+        item.setData(0, Qt.ItemDataRole.UserRole, new)
+        self.blockSignals(False)
+
+    def colours(self):
+        return {label: area['colour'] for label, (area, status) in self.areas.items()
+                if status == 'Generated'}
 
     def hidden_labels(self):
         return [label for label, item in self.items.items()

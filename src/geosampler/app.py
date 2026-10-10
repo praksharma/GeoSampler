@@ -4,9 +4,9 @@ import sys
 from pathlib import Path
 import json
 from PySide6.QtCore import QProcess, QSettings, Qt, QSize, QSignalBlocker
-from PySide6.QtGui import QActionGroup
+from PySide6.QtGui import QActionGroup, QColor
 from PySide6.QtWidgets import (QApplication, QComboBox, QDockWidget, QLabel,
-    QMainWindow, QMessageBox, QToolBar, QTreeWidget, QTreeWidgetItem, QFileDialog, QAbstractItemView, QScrollArea, QSizePolicy, QSplitter)
+    QMainWindow, QMessageBox, QToolBar, QTreeWidget, QTreeWidgetItem, QFileDialog, QAbstractItemView, QScrollArea, QSizePolicy, QSplitter, QMenu, QInputDialog, QColorDialog)
 from . import __version__
 from .theme import configure_theme
 from .viewport import Viewport
@@ -110,10 +110,14 @@ class MainWindow(QMainWindow):
         self.tree = tree
         tree.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         tree.itemSelectionChanged.connect(self.tree_selection_changed)
+        tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        tree.customContextMenuRequested.connect(self.geometry_context_menu)
         tree.setHeaderHidden(True)
         tree.addTopLevelItems([QTreeWidgetItem(["Geometry"]), QTreeWidgetItem(["Regions"])])
         self.sampled_areas = SampledAreasTree()
         self.sampled_areas.areaSelected.connect(self.show_sampled_area)
+        self.sampled_areas.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.sampled_areas.customContextMenuRequested.connect(self.area_context_menu)
         self.left_splitter = QSplitter(Qt.Orientation.Vertical)
         self.left_splitter.addWidget(tree)
         self.left_splitter.addWidget(self.sampled_areas)
@@ -232,6 +236,112 @@ class MainWindow(QMainWindow):
         self.addDockWidget(area, dock)
         self.view_menu.addAction(dock.toggleViewAction())
         return dock
+
+    def geometry_context_menu(self, position):
+        item = self.tree.itemAt(position)
+        key = item.data(0, Qt.ItemDataRole.UserRole) if item else None
+        if key and key[0] == 2 and not item.isSelected():
+            self.tree.clearSelection()
+            self.tree.setCurrentItem(item)
+        menu = self.face_menu()
+        menu.exec(self.tree.viewport().mapToGlobal(position))
+        menu.deleteLater()
+
+    def face_menu(self):
+        menu = QMenu(self.tree)
+        faces = sorted(tag for dimension, tag in self.selection if dimension == 2)
+        hide = menu.addAction('Hide selected faces', lambda: self.hide_faces(faces))
+        isolate = menu.addAction('Isolate selected faces', lambda: self.isolate_faces(faces))
+        hide.setEnabled(bool(faces)); isolate.setEnabled(bool(faces))
+        menu.addSeparator()
+        menu.addAction('Show all faces', self.show_all_faces).setEnabled(self.geometry is not None)
+        return menu
+
+    def hide_faces(self, tags):
+        hidden = set(self.view.geometry_visibility['hiddenFaces']) | set(tags)
+        self.view.set_geometry_visibility({'hiddenFaces': sorted(hidden)})
+
+    def isolate_faces(self, tags):
+        self.isolate_action.setChecked(False)
+        for key in ('geometry', 'faces'):
+            self.visibility_actions[key].setChecked(True)
+        hidden = set(self.view.geometry_visibility['hiddenFaces']) - set(tags)
+        self.view.set_geometry_visibility({'hiddenFaces': sorted(hidden), 'isolatedFaces': list(tags)})
+
+    def show_all_faces(self):
+        self.isolate_action.setChecked(False)
+        for key in ('geometry', 'faces'):
+            self.visibility_actions[key].setChecked(True)
+        self.view.set_geometry_visibility({'hiddenFaces': [], 'isolatedFaces': None})
+
+    def area_context_menu(self, position):
+        item = self.sampled_areas.itemAt(position)
+        while item is not None and item.parent() is not self.sampled_areas.root:
+            item = item.parent()
+        if item is None:
+            return
+        label = item.data(0, Qt.ItemDataRole.UserRole)
+        self.sampled_areas.setCurrentItem(item)
+        menu = self.area_menu(label)
+        menu.exec(self.sampled_areas.viewport().mapToGlobal(position))
+        menu.deleteLater()
+
+    def area_menu(self, label):
+        menu = QMenu(self.sampled_areas)
+        area, status = self.sampled_areas.areas[label]
+        menu.addAction('Rename…', lambda: self.rename_area(label)).setEnabled(not self.sampling.process)
+        menu.addAction('Change colour…', lambda: self.change_area_colour(label)).setEnabled(status == 'Generated')
+        menu.addSeparator()
+        visible = menu.addAction('Show points')
+        visible.setCheckable(True)
+        visible.setChecked(self.sampled_areas.items[label].checkState(0) == Qt.CheckState.Checked)
+        visible.setEnabled(status == 'Generated')
+        visible.toggled.connect(lambda checked: self.sampled_areas.items[label].setCheckState(
+            0, Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked))
+        isolate = menu.addAction('Isolate region', lambda: self.isolate_area(label))
+        isolate.setEnabled(status == 'Generated')
+        menu.addAction('Show all regions', self.show_all_regions)
+        return menu
+
+    def isolate_area(self, label):
+        self.show_sampled_area(label)
+        self.isolate_action.setChecked(True)
+
+    def show_all_regions(self):
+        self.isolate_action.setChecked(False)
+        self.samples_action.setChecked(True)
+        for label, item in self.sampled_areas.items.items():
+            if self.sampled_areas.areas[label][1] == 'Generated':
+                item.setCheckState(0, Qt.CheckState.Checked)
+
+    def rename_area(self, label):
+        if self.sampling.process:
+            return
+        name, accepted = QInputDialog.getText(self, 'Rename sampled area', 'Dataset label:', text=label)
+        if not accepted:
+            return
+        name = name.strip()
+        if not name or (name != label and name in self.sampled_areas.areas):
+            QMessageBox.warning(self, 'Dataset label', 'Enter a non-empty, unique label.')
+            return
+        if name == label:
+            return
+        self.sampled_areas.rename_area(label, name)
+        if self.selected_area == label:
+            self.selected_area = name
+            self.show_sampled_area(name)
+        self.sampling.label.setText(self.sampling.next_available_label(self.sampling.label.text()))
+        self.sampling.refresh_preview()
+
+    def change_area_colour(self, label):
+        area, status = self.sampled_areas.areas[label]
+        if status != 'Generated':
+            return
+        colour = QColorDialog.getColor(QColor(area['colour']), self, 'Sampled area colour')
+        if colour.isValid():
+            area['colour'] = colour.name()
+            self.sampled_areas.set_area(area, status)
+            self.sampling.refresh_style()
 
     def show_sampled_area(self, label):
         area, status = self.sampled_areas.areas[label]
@@ -378,6 +488,7 @@ class MainWindow(QMainWindow):
                 item.setToolTip(0, "Entities: " + ", ".join(map(str, group["entities"])))
         parent.setExpanded(True)
         self.tree.blockSignals(False)
+        self.view.set_geometry_visibility({'hiddenFaces': [], 'isolatedFaces': None})
         self.view.set_geometry(geometry)
         self.sampling.geometry_loaded()
         self.setWindowTitle("GeoSampler — " + geometry["name"])

@@ -50,7 +50,7 @@ class Viewport(QWidget):
         self.mode = "face"
         self.show_grid = False
         self.show_axes = True
-        self.geometry_visibility = {"geometry":True,"faces":True,"edges":True,"isolatedEntities":None}
+        self.geometry_visibility = {"geometry":True,"faces":True,"edges":True,"isolatedEntities":None,"hiddenFaces":[],"isolatedFaces":None}
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         self.error = QLabel()

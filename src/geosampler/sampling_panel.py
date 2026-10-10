@@ -258,7 +258,8 @@ class SamplingPanel(QWidget):
         return {'visible': self.show_points.isChecked(),
                 'through': self.through.isChecked(), 'size': self.point_size.value(),
                 'hiddenLabels': self.window.sampled_areas.hidden_labels(),
-                'isolatedLabel': self.window.isolated_label()}
+                'isolatedLabel': self.window.isolated_label(),
+                'colours': self.window.sampled_areas.colours()}
 
     def refresh_style(self):
         self.size_label.setText(f'{self.point_size.value()} px')

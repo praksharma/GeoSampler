@@ -366,3 +366,21 @@ The benchmark includes imports, meshing, sampling and JSON result transfer.
 Validation covers multicore HXT interior membership and methods, serial fixture
 reproducibility, unchanged saved baseline coordinates/tags, and GUI generation,
 cancellation, visibility and export with the default Multicore mode.
+
+### Face and sampled-area context menus
+
+Right-click a face in the geometry tree to hide the selected faces, isolate them,
+or show all faces again. Right-clicking an unselected face selects it; right-clicking
+one of several selected faces keeps the group. These controls affect shaded faces;
+edges retain their separate visibility setting. Hidden faces cannot be picked in
+3D, but remain available in the tree. Show all faces also restores the Geometry and
+Faces switches and exits sampled-region isolation. Importing geometry clears face masks.
+
+Right-click a Sampled Areas label (or its details) to rename it, change its colour,
+show/hide its points, isolate it, or show all regions. Colour swatches match the point
+clouds; defaults use warm white, cyan, lime, lavender and white. Changes take effect
+immediately. Renaming requires a non-empty, unique label and is disabled during
+generation. Hidden/isolation state and coordinates survive renaming. Exports use
+the new labels and include each region's colour in its metadata. Canceling either
+dialog leaves the region unchanged. These display choices last for the current
+session; saved project/session loading remains future work.

@@ -131,3 +131,9 @@ readers are outside the initial scope and require separate evaluation.
 - [ ] Cache/reuse geometry preparation and support batch generation.
 - [ ] Evaluate GPU/JIT acceleration if candidate mapping or clipping becomes
       the measured bottleneck.
+
+## Region inspection controls
+
+- [x] Geometry tree context menu: hide selected faces, isolate selected faces, show all faces.
+- [x] Sampled Areas context menu: rename, change colour, visibility and isolation.
+- [x] Preserve coordinates and visibility across renaming; export new labels and colour metadata.
