@@ -15,6 +15,7 @@ from .window_controls import install_window_controls
 from .sampling_panel import SamplingPanel
 from .sampled_areas import SampledAreasTree, area_details
 from .icons import tool_icon
+from .cad_import import FILE_FILTER
 
 
 class MainWindow(QMainWindow):
@@ -470,7 +471,7 @@ class MainWindow(QMainWindow):
         QMessageBox.about(self, "About GeoSampler", f"GeoSampler {__version__}\nGeometry-aware sampling for PINNs.\n\nGmsh geometry import with face and edge selection. Seven sampling methods with boundary/interior previews.\nAdapted from PyniteGUI; licensed under AGPL-3.0-only.\nThree.js is distributed under its MIT licence.")
 
     def open_geometry(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Open geometry", "", "Gmsh geometry (*.geo)")
+        path, _ = QFileDialog.getOpenFileName(self, "Open geometry", "", FILE_FILTER)
         if path:
             self.load_geometry(path)
 
@@ -522,6 +523,13 @@ class MainWindow(QMainWindow):
                 key = (dimension, entity["tag"])
                 item = QTreeWidgetItem(group, [f"{label[:-1]} {key[1]} · {entity['type']}"])
                 item.setData(0, Qt.ItemDataRole.UserRole, key)
+                hints = []
+                if entity.get("name"):
+                    hints.append("CAD name: " + entity["name"])
+                if entity.get("degenerate"):
+                    hints.append("Zero-length CAD edge: retained topology; cannot be sampled.")
+                if hints:
+                    item.setToolTip(0, "\n".join(hints))
                 self.items[key] = item
         regions = QTreeWidgetItem(self.tree, ["Imported groups"])
         for group in geometry["groups"]:
@@ -612,7 +620,7 @@ class MainWindow(QMainWindow):
 
 def main():
     parser = argparse.ArgumentParser(description="GeoSampler desktop application")
-    parser.add_argument("geometry", nargs="?", help="Gmsh .geo file to open")
+    parser.add_argument("geometry", nargs="?", help="Gmsh, STEP, Open CASCADE BREP or IGES file to open")
     parser.add_argument("--version", action="version", version=f"GeoSampler {__version__}")
     parser.add_argument("--software-rendering", action="store_true", help="Use software rendering for the 3D viewport")
     args = parser.parse_args()

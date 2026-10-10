@@ -108,8 +108,9 @@ Acceptance checks:
 
 ## 6. Broader CAD import — next priority
 
-Release target: **Gmsh .geo + STEP + Open CASCADE BREP + IGES**. Only `.geo`
-is currently implemented. Prioritise topology-preserving CAD exchange, with
+Release target: **Gmsh .geo + STEP + Open CASCADE BREP + IGES**. All four are now
+implemented and tested on small fixtures; broader CAD compatibility and metadata
+checks remain below. Prioritise topology-preserving CAD exchange, with
 original faces/edges and valid solids rather than triangle-only meshes.
 
 Current backend is the Gmsh Python API, not PythonOCC/OCP. `.geo` scripts can use
@@ -120,18 +121,19 @@ for BREP, STEP and IGES. Start there without introducing a second geometry backe
 
 ### Format order and implementation
 
-- [ ] **1. STEP (`.step`, `.stp`)**: first neutral-format implementation; retain
+- [x] **1. STEP (`.step`, `.stp`)**: first neutral-format implementation; retain
       analytic/curved geometry, original topology and closed-solid definitions.
-      Evaluate AP203/AP214/AP242 fixtures; do not promise all product information
-      or face-level labels will survive every exporter/importer combination.
-- [ ] **2. Open CASCADE BREP (`.brep`)**: support OCC's native topology format;
+      A surface STEP and a solid STEP fixture are covered.
+- [ ] Evaluate AP203/AP214/AP242 and richer product metadata; do not promise
+      face-level labels will survive every exporter/importer combination.
+- [x] **2. Open CASCADE BREP (`.brep`)**: support OCC's native topology format;
       document the accepted BREP dialect rather than treating all B-Rep files alike.
-- [ ] **3. IGES (`.iges`, `.igs`)**: accept surface-only and solid models;
+- [x] **3. IGES (`.iges`, `.igs`)**: accept surface-only and solid models;
       disconnected/unsewn surfaces remain usable for boundary sampling, while
       interior sampling requires a validated closed domain.
-- [ ] Share format detection and geometry loading between the display importer
+- [x] Share format detection and geometry loading between the display importer
       and sampling workers, so a file can both render and generate valid samples.
-- [ ] Update file filters, CLI help, errors and documentation with actual supported
+- [x] Update file filters, CLI help, errors and documentation with actual supported
       extensions; validate contents and handle malformed/unsupported files clearly.
 - [ ] Keep `.geo` and both Gmsh kernels working; do not require conversion to OCC
       or assume built-in-kernel scripts can be converted losslessly to STEP.
@@ -158,6 +160,10 @@ for BREP, STEP and IGES. Start there without introducing a second geometry backe
       insufficient; keep the backend-independent application interface.
 
 ### Validation and release checks
+
+- [x] Download and verify pinned Gmsh STEP/BREP/IGES fixtures with provenance
+      and licence; test topology, face/edge sampling, solid interior sampling,
+      surface-only rejection, degenerate edges, GUI visibility and exports.
 
 - [ ] Add small, attributable STEP/BREP/IGES fixtures: curved solid with a hole,
       prepared boundary patches, open surface, multiple bodies and assembly placement.

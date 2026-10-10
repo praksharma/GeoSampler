@@ -21,8 +21,8 @@ and theme persist between launches. Sampled datasets are held in memory until ex
 ## Architecture
 
 `geometry.py` runs Gmsh in a separate process, returning entity identities,
-physical groups and per-entity display tessellation. Only `.geo` input is
-currently enabled. Geometry is retained in the source file; display triangles
+physical groups and per-entity display tessellation. Supported inputs are `.geo`,
+STEP (`.step`, `.stp`), OCC BREP (`.brep`) and IGES (`.iges`, `.igs`). Geometry is retained in the source file; display triangles
 are not a substitute for exact geometry in future sampling.
 
 `src/geosampler/app.py` owns the Qt window, menus, docks and settings.
@@ -71,7 +71,7 @@ Interactive mouse gestures and other operating systems still need manual checks.
 
 ## Geometry import and selection
 
-Open a `.geo` file with File → Open Geometry, or pass its path on the command
+Open a supported geometry file with File → Open Geometry, or pass its path on the command
 line. Import runs outside the UI process; a failed import retains the previous
 model. Closing the window stops an active import. File replacement clears old
 selections. Face and edge IDs are scoped to the loaded document.
@@ -185,7 +185,7 @@ is limited so controls retain their natural height. Show sample points toggles t
 preview; Show points through geometry reveals interior samples. Clear generated
 datasets removes all in-memory datasets. Samples are generated in a separate
 process, with cancellation; errors retain previous datasets. Geometry replacement
-clears datasets. If the source `.geo` file changes, reopen it before sampling.
+clears datasets. If the source geometry file changes, reopen it before sampling.
 Metadata includes source SHA-256, target entities, method, seed, requested/actual
 counts, accuracy and approximation notes. Export saves the current datasets;
 saved application configurations and normals remain future work.
@@ -425,3 +425,32 @@ order; Cartesian/LHS/Sobol/random parameter sweeps; cancellable processing and
 incremental NetCDF4 grouped output; CAD regeneration and recipe resampling.
 Ranges, batch processing, DataTree exports and dimensional changes such as hole
 radius are **not implemented** in this first slice.
+
+### Neutral CAD import
+
+File → Open Geometry and the command line accept STEP, Open CASCADE BREP and
+IGES alongside `.geo`. `cad_import.py` is the shared Qt-independent loader used
+by both display and sampling workers. Neutral formats use Gmsh's OCC import and
+synchronisation; scripts retain their original kernel. Available CAD entity names
+appear in geometry-tree tooltips. Names are not automatically interpreted as BCs
+or Gmsh physical groups, and face naming fidelity depends on the source exporter.
+
+Files containing faces but no solid volumes can be displayed and sampled on faces
+and edges. Neutral-format interior sampling requires imported solid volumes and
+reports a clear error for surface-only files. No automatic sewing is introduced
+in this importer. This deliberately does not treat a set of cube-shaped surfaces
+as a solid merely because it looks closed. Source units remain unspecified in
+exports; unit detection/conversion, comprehensive assembly metadata and optional
+healing remain roadmap work. Display topology retains zero-length CAD edges with
+an explanatory tooltip, omits their rendering and rejects sampling them.
+
+Try the downloaded fixtures under `examples/geometries/cad/`: `t20_data.step`
+(a solid supporting interior sampling), `cylinder.brep` (curved solid),
+`cube_filet.stp` (filleted surfaces with degenerate edges), and `cube1000.igs`
+(surface-only cube). README, provenance.json and LICENSE.txt record pinned
+upstream sources, checksums and licensing. They are not converted `.geo` files.
+
+STEP/BREP/IGES support is validated on these small fixtures; industrial CAD,
+assemblies, additional STEP application protocols, units, healing and stable
+cross-import region identifiers still require broader testing. No STL, Parasolid,
+ACIS or proprietary native CAD importer is added.

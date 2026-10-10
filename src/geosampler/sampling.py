@@ -246,13 +246,16 @@ def sample_geometry(request):
     gmsh.initialize(['geosampler'], readConfigFiles=False)
     try:
         gmsh.option.setNumber('General.Terminal', 0)
-        gmsh.open(str(path))
+        from .cad_import import open_source
+        source_format = open_source(gmsh, path)
         gmsh.option.setNumber('General.NumThreads', threads)
         for axis in (1,2,3):
             gmsh.option.setNumber(f'Mesh.MaxNumThreads{axis}D',threads)
         gmsh.option.setNumber('Mesh.Reproducible',1 if mode=='multicore' else 0)
         gmsh.option.setNumber('Mesh.RandomSeed', 1)
         if request['target'] == 'interior':
+            if source_format != 'geo' and not gmsh.model.getEntities(3):
+                raise ValueError('Interior sampling requires solid volumes. This CAD file imported as surfaces only; sample its faces or supply a closed solid model.')
             dim = 3 if gmsh.model.getEntities(3) else 2
             tags = [t for _, t in gmsh.model.getEntities(dim)]
         else:
@@ -281,6 +284,12 @@ def sample_geometry(request):
             gmsh.model.mesh.generate(dim)
             gmsh.model.mesh.setOrder(1)
         if dim == 1:
+            if source_format != 'geo':
+                bounds = gmsh.model.getBoundingBox(-1, -1)
+                scale = max(bounds[i+3]-bounds[i] for i in range(3))
+                for tag in tags:
+                    if gmsh.model.occ.getMass(1, tag) <= max(scale, 1e-12)*1e-12:
+                        raise ValueError(f'Edge {tag} is a degenerate CAD edge with zero length; choose another edge.')
             points, point_tags, notes = _edge_samples(gmsh, tags, method, count, seed)
         elif dim == 2:
             points, point_tags, notes = _surface_samples(gmsh, tags, method, count, seed)
@@ -300,7 +309,7 @@ def sample_geometry(request):
                 'entities': [[dim, t] for t in tags], 'method': method, 'seed': seed,
                 'requested_count': count, 'count': len(points), 'coordinates': points.tolist(),
                 'entity_tags': point_tags.astype(int).tolist(), 'entity_dimension': dim,
-                'source': str(path), 'source_hash': digest, 'notes': notes,
+                'source': str(path), 'source_hash': digest, 'source_format': source_format, 'notes': notes,
                 'resolution': request.get('resolution', 32), 'compute_mode':mode,
                 'cpu_threads':threads, 'mesh_algorithm_2d':int(gmsh.option.getNumber('Mesh.Algorithm')),
                 'mesh_algorithm_3d':int(gmsh.option.getNumber('Mesh.Algorithm3D'))}

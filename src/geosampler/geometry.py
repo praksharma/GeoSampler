@@ -5,19 +5,18 @@ import math
 import sys
 from pathlib import Path
 from uuid import uuid4
+from .cad_import import open_source
 
 
 def load_geometry(filename):
     import gmsh
     path = Path(filename).resolve()
-    if path.suffix.lower() != ".geo":
-        raise ValueError("Choose a Gmsh .geo geometry file.")
     if not path.is_file():
         raise ValueError("Geometry file does not exist.")
     gmsh.initialize(["geosampler"], readConfigFiles=False)
     try:
         gmsh.option.setNumber("General.Terminal", 0)
-        gmsh.open(str(path))
+        source_format = open_source(gmsh, path)
         faces = gmsh.model.getEntities(2)
         edges = gmsh.model.getEntities(1)
         if not faces:
@@ -44,14 +43,23 @@ def load_geometry(filename):
                     indices = [0, 1] if dim == 1 else ([0, 1, 2] if primary == 3 else [0, 1, 2, 0, 2, 3])
                     for i in indices:
                         vertices.extend(positions[int(block[offset+i])])
+            degenerate = False
             if not vertices:
-                raise ValueError(f"Entity ({dim}, {tag}) has no display elements.")
+                bounds = gmsh.model.getBoundingBox(-1, -1)
+                scale = max(bounds[i+3] - bounds[i] for i in range(3))
+                degenerate = (dim == 1 and source_format != 'geo'
+                              and gmsh.model.occ.getMass(dim, tag) <= max(scale, 1e-12) * 1e-12)
+                if not degenerate:
+                    raise ValueError(f"Entity ({dim}, {tag}) has no display elements.")
             entities.append({"dimension": dim, "tag": tag, "type": gmsh.model.getType(dim, tag),
+                             "name": gmsh.model.getEntityName(dim, tag), "degenerate": degenerate,
                              "boundary": [list(e) for e in gmsh.model.getBoundary([(dim, tag)], oriented=False)],
                              "groups": [g["tag"] for g in groups if g["dimension"] == dim and tag in g["entities"]],
                              "positions": vertices})
         return {"document": uuid4().hex, "source": str(path), "name": path.name,
-                "dimension": 3 if gmsh.model.getEntities(3) else 2,
+                "dimension": 3 if gmsh.model.getEntities(3) or source_format != "geo" else 2,
+                "source_format": source_format, "solid_count": len(gmsh.model.getEntities(3)),
+                "coordinate_units": "Source geometry units (unspecified)",
                 "source_hash": hashlib.sha256(path.read_bytes()).hexdigest(),
                 "entities": entities, "groups": groups}
     finally:

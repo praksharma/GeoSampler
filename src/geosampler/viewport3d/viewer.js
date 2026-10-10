@@ -91,6 +91,7 @@ function loadGeometry(data){
   objects=[];faces=[];edges=[];selected.clear();hover=null;down=null;documentId=data.document;
   const box=new THREE.Box3();
   for(const entity of data.entities){
+    if(!entity.positions.length)continue;
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(entity.positions,3));
     let object;
     if(entity.dimension===2){

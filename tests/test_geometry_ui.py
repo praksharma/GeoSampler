@@ -330,3 +330,33 @@ class GeometryTest(unittest.TestCase):
                 self.assertEqual(window.sampling.label.text(),'cancelled')
                 self.assertEqual(window.sampled_areas.items['cancelled'].child(4).text(0),'Status: Not generated (cancelled)')
             finally:window.close()
+
+    def test_neutral_cad_viewport(self):
+        cad=FIXTURES.parent/'cad'
+        with tempfile.TemporaryDirectory() as directory:
+            window=MainWindow(QSettings(str(Path(directory)/'cad.ini'),QSettings.Format.IniFormat))
+            window.show()
+            try:
+                self.wait_for(lambda:window.view.is_ready)
+                for name in ('t20_data.step','cube_filet.stp','cylinder.brep','cube1000.igs'):
+                    with patch('geosampler.app.QMessageBox.warning') as warning:
+                        window.load_geometry(cad/name)
+                        self.wait_for(lambda:window.import_process is None)
+                        warning.assert_not_called()
+                    self.assertEqual(window.geometry['name'],name)
+                    faces=[e for e in window.geometry['entities'] if e['dimension']==2]
+                    self.wait_for(lambda:self.javascript(window,'window.geoViewer.diagnostics().visibleFaces')==len(faces))
+                    face=faces[0]
+                    window.tree.setCurrentItem(window.items[(2,face['tag'])])
+                    self.assertEqual(window.selection,{(2,face['tag'])})
+                    window.hide_faces([face['tag']])
+                    self.wait_for(lambda:self.javascript(window,'window.geoViewer.diagnostics().visibleFaces')==len(faces)-1)
+                    window.show_all_faces()
+                    window.sampling.count.setValue(32)
+                    window.sampling.start()
+                    self.wait_for(lambda:window.sampling.process is None)
+                    self.assertEqual(window.sampling.batches[0]['count'],32)
+                    self.wait_for(lambda:self.javascript(window,'window.geoViewer.diagnostics().sampleCount')==32)
+                window.grab().save('/tmp/geosampler-iges-preview.png')
+                self.assertTrue(self.javascript(window,'window.geoFailure===null'))
+            finally:window.close()

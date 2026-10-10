@@ -1,0 +1,41 @@
+{
+  "repository": "https://github.com/gmsh-project/gmsh",
+  "revision": "e2e2839e27d6269eada13d0b862673b4d267b32d",
+  "files": [
+    {
+      "file": "cube_filet.stp",
+      "upstream_path": "benchmarks/step/cube_filet.stp",
+      "url": "https://raw.githubusercontent.com/gmsh-project/gmsh/e2e2839e27d6269eada13d0b862673b4d267b32d/benchmarks/step/cube_filet.stp",
+      "git_blob": "7e04f5e86485fb35cb2de561c281f7a8565d5d70",
+      "sha256": "3e01a3035aa67ea681e71337c726b840f861623c1539b99cfe5190cde8da5a35"
+    },
+    {
+      "file": "cylinder.brep",
+      "upstream_path": "benchmarks/brep/cylinder.brep",
+      "url": "https://raw.githubusercontent.com/gmsh-project/gmsh/e2e2839e27d6269eada13d0b862673b4d267b32d/benchmarks/brep/cylinder.brep",
+      "git_blob": "84d4079c8331c45523ca6f2ffc8f7f848b101d3b",
+      "sha256": "14eae7dc62c75aae4f0c0917d6648f5e2bf69962e79a3ebacfe3d82a8e46d97c"
+    },
+    {
+      "file": "cube1000.igs",
+      "upstream_path": "benchmarks/iges/cube1000.igs",
+      "url": "https://raw.githubusercontent.com/gmsh-project/gmsh/e2e2839e27d6269eada13d0b862673b4d267b32d/benchmarks/iges/cube1000.igs",
+      "git_blob": "6d24a49c876c15076604e7cad361da658f396ae7",
+      "sha256": "14f11361a9d85dc190435a381aaf72ace6f59ee3a2d886efde7dd097e3c5c189"
+    },
+    {
+      "file": "LICENSE.txt",
+      "upstream_path": "LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/gmsh-project/gmsh/e2e2839e27d6269eada13d0b862673b4d267b32d/LICENSE.txt",
+      "git_blob": "a287dbfb3d55ea2f63f96be0ca0fc9a17a92cf84",
+      "sha256": "775884696671d8010c3377baaec12edd1f67204a72787ff71e59ae9075ccd0b5"
+    },
+    {
+      "file": "t20_data.step",
+      "upstream_path": "tutorials/t20_data.step",
+      "url": "https://raw.githubusercontent.com/gmsh-project/gmsh/e2e2839e27d6269eada13d0b862673b4d267b32d/tutorials/t20_data.step",
+      "git_blob": "6ed504923fbdb1afb4e8d0f3ce265c6b5d395d91",
+      "sha256": "473523083e755b6e2536d4cebdd20f8ada018683e5c1938503f26c588783ad15"
+    }
+  ]
+}
