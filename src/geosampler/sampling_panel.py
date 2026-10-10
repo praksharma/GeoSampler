@@ -3,7 +3,7 @@ import json
 import sys
 from PySide6.QtCore import QProcess, Qt
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QComboBox,
-    QSpinBox, QLineEdit, QLabel, QPushButton, QHBoxLayout, QCheckBox, QMessageBox)
+    QSpinBox, QLineEdit, QLabel, QPushButton, QHBoxLayout, QCheckBox, QMessageBox, QSlider, QScrollArea, QLayout)
 from .sampling_methods import METHODS
 
 
@@ -14,8 +14,19 @@ class SamplingPanel(QWidget):
         self.process = None
         self.cancelled = False
         self.batches = []
-        layout = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        self.scroll.setWidget(content)
+        outer.addWidget(self.scroll)
         form = QFormLayout()
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self.target = QComboBox()
         self.target.addItem('Selected faces / edges', 'selection')
         self.target.addItem('Domain interior', 'interior')
@@ -55,12 +66,26 @@ class SamplingPanel(QWidget):
         layout.addLayout(row)
         self.show_points = QCheckBox('Show sample points')
         self.show_points.setChecked(True)
-        self.show_points.toggled.connect(self.refresh_preview)
+        self.show_points.toggled.connect(self.refresh_style)
         layout.addWidget(self.show_points)
         self.through = QCheckBox('Show points through geometry')
         self.through.setChecked(True)
-        self.through.toggled.connect(self.refresh_preview)
+        self.through.toggled.connect(self.refresh_style)
         layout.addWidget(self.through)
+        size_row = QHBoxLayout()
+        size_row.addWidget(QLabel('Point size'))
+        self.point_size = QSlider(Qt.Orientation.Horizontal)
+        self.point_size.setRange(3, 16)
+        self.point_size.setValue(window.settings.value('sampling/point_size', 7, type=int))
+        self.point_size.setAccessibleName('Sample point size')
+        self.point_size.setToolTip('Marker diameter in screen pixels. Changes only the preview.')
+        self.size_label = QLabel()
+        self.size_label.setMinimumWidth(self.size_label.fontMetrics().horizontalAdvance('16 px'))
+        size_row.addWidget(self.point_size, 1)
+        size_row.addWidget(self.size_label)
+        layout.addLayout(size_row)
+        self.point_size.valueChanged.connect(self.refresh_style)
+        self.refresh_style()
         self.clear = QPushButton('Clear generated datasets')
         self.clear.clicked.connect(self.clear_batches)
         layout.addWidget(self.clear)
@@ -189,7 +214,14 @@ class SamplingPanel(QWidget):
         self.window.sample_results.setText('No samples generated.')
         self.summary.setText('No generated datasets.')
 
+    def preview_style(self):
+        return {'visible': self.show_points.isChecked(),
+                'through': self.through.isChecked(), 'size': self.point_size.value()}
+
+    def refresh_style(self):
+        self.size_label.setText(f'{self.point_size.value()} px')
+        self.window.settings.setValue('sampling/point_size', self.point_size.value())
+        self.window.view.set_sample_style(self.preview_style())
+
     def refresh_preview(self):
-        self.window.view.set_samples({'batches': self.batches,
-                                     'visible': self.show_points.isChecked(),
-                                     'through': self.through.isChecked()})
+        self.window.view.set_samples({'batches': self.batches, **self.preview_style()})

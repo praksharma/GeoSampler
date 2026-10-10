@@ -49,6 +49,7 @@ class ShellTest(unittest.TestCase):
                 self.assertEqual(self.javascript(window, 'document.querySelectorAll("canvas").length'), 1)
                 window.view.call('orient', 3)
                 self.wait_for(lambda: window.orientation.currentIndex() == 3)
+                window.sampling.point_size.setValue(10)
                 window.set_theme('dark')
                 self.assertEqual(settings.value('theme'), 'dark')
                 window.set_visibility('show_grid', False)
@@ -60,6 +61,7 @@ class ShellTest(unittest.TestCase):
                 reopened = MainWindow(settings)
                 reopened.show()
                 try:
+                    self.assertEqual(reopened.sampling.point_size.value(),10)
                     self.assertTrue(reopened.results_dock.isVisible())
                     reopened.reset_layout()
                     self.assertTrue(reopened.results_dock.isHidden())

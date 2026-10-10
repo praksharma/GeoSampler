@@ -45,7 +45,7 @@ class Viewport(QWidget):
         super().__init__(parent)
         self.is_ready = False
         self.geometry = None
-        self.samples = {"batches": [], "visible": True, "through": True}
+        self.samples = {"batches": [], "visible": True, "through": True, "size": 7}
         self.selection = []
         self.mode = "face"
         self.show_grid = self.show_axes = True
@@ -111,3 +111,7 @@ class Viewport(QWidget):
     def set_samples(self, samples):
         self.samples = samples
         self.call("setSamples", samples)
+
+    def set_sample_style(self, style):
+        self.samples.update(style)
+        self.call("setSampleStyle", style)

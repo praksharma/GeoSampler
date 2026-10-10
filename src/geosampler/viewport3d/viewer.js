@@ -116,25 +116,42 @@ renderer.domElement.addEventListener('pointerup',event=>{
   const object=pickAt(event.clientX,event.clientY);
   window.geoBridge?.picked(documentId,object?.userData.dimension||0,object?.userData.tag||0,event.ctrlKey||event.metaKey||event.shiftKey);
 });
+// One shared sprite keeps large clouds cheap: a light circle with a dark rim.
+// The outline preserves contrast on selected orange faces and light canvases.
+const pointCanvas=document.createElement('canvas');pointCanvas.width=pointCanvas.height=64;
+const pointContext=pointCanvas.getContext('2d');
+pointContext.fillStyle='#151515';pointContext.beginPath();pointContext.arc(32,32,30,0,Math.PI*2);pointContext.fill();
+pointContext.fillStyle='#ffffff';pointContext.beginPath();pointContext.arc(32,32,23,0,Math.PI*2);pointContext.fill();
+const pointTexture=new THREE.CanvasTexture(pointCanvas);pointTexture.colorSpace=THREE.SRGBColorSpace;
+let sampleStyle={size:7,visible:true,through:true};
+function setSampleStyle(config){
+  sampleStyle={...sampleStyle,...config};
+  for(const object of sampleObjects){
+    object.material.size=sampleStyle.size;
+    object.material.depthTest=!sampleStyle.through;
+    object.visible=sampleStyle.visible;
+  }
+}
 function setSamples(config){
   for(const object of sampleObjects){scene.remove(object);object.geometry.dispose();object.material.dispose();}
   sampleObjects=[];
-  const colors=[0xf15a9b,0x388bef,0xb070ec,0x22b98a,0xe3b938];
+  const colors=[0xfff6dc,0x83e5ed,0xb5ef86,0xaabfff,0xffffff];
   for(const [index,batch] of config.batches.entries()){
     const geometry=new THREE.BufferGeometry();
     geometry.setAttribute('position',new THREE.Float32BufferAttribute(batch.coordinates.flat(),3));
-    const object=new THREE.Points(geometry,new THREE.PointsMaterial({color:colors[index%colors.length],size:4,sizeAttenuation:false,depthTest:!config.through,depthWrite:false}));
-    object.visible=config.visible;object.renderOrder=2;
+    const object=new THREE.Points(geometry,new THREE.PointsMaterial({color:colors[index%colors.length],map:pointTexture,alphaTest:0.15,sizeAttenuation:false,depthWrite:false}));
+    object.renderOrder=2;
     scene.add(object);sampleObjects.push(object);
   }
+  setSampleStyle({size:config.size??7,visible:config.visible,through:config.through});
 }
 function diagnostics(){
   const gl=renderer.getContext(),extension=gl.getExtension('WEBGL_debug_renderer_info');
   return {renderer:gl.getParameter(extension?extension.UNMASKED_RENDERER_WEBGL:gl.RENDERER),
     vendor:gl.getParameter(extension?extension.UNMASKED_VENDOR_WEBGL:gl.VENDOR),
-    version:gl.getParameter(gl.VERSION),lost:gl.isContextLost(),sampleCount:sampleObjects.reduce((n,o)=>n+o.geometry.attributes.position.count,0)};
+    version:gl.getParameter(gl.VERSION),lost:gl.isContextLost(),pointSize:sampleStyle.size,sampleVisible:sampleStyle.visible,sampleCount:sampleObjects.reduce((n,o)=>n+o.geometry.attributes.position.count,0)};
 }
-window.geoViewer={orient,appearance,loadGeometry,setMode,setSelection,setSamples,diagnostics,reset:()=>orient(0)};
+window.geoViewer={orient,appearance,loadGeometry,setMode,setSelection,setSamples,setSampleStyle,diagnostics,reset:()=>orient(0)};
 renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();window.geoReportFailure('Graphics context lost. Restart the application.');});
 addEventListener('resize',resize);resize();appearance({canvas:'#fafcfc',grid:'#e2e7e8',showGrid:true,showAxes:true});orient(0);setMode('face');
 const clock=new THREE.Clock();renderer.setAnimationLoop(()=>{gizmo.update(clock.getDelta());controls.update();renderer.clear();renderer.render(scene,camera);gizmo.render();});

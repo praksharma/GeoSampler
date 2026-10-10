@@ -86,6 +86,7 @@ Acceptance checks:
 - [x] Background generation, cancellation and simultaneous point previews.
 - [ ] Saved per-region sampling configurations.
 - [x] Sampling previews.
+- [x] Live point-size slider, outlined high-contrast markers and scrollable sampling controls.
 - [ ] Outward normals where applicable.
 - [x] Reference-fixture boundary membership, coverage and interior checks.
 - [ ] Validate arbitrary CAD trimming/containment and normal orientation; add

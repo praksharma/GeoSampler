@@ -165,7 +165,12 @@ allocation; random surface and volume sampling are area/volume weighted.
 
 ### Previews and generation lifecycle
 
-Each dataset uses a different preview colour. Show sample points toggles the
+Points use circular markers with dark outlines, starting with warm white for
+visibility against selected orange faces and under Night Light. Further datasets
+use contrasting colours. The Point size slider changes the marker diameter
+(3–16 screen pixels, default 7) immediately without regenerating coordinates;
+its value is remembered between sessions. The Sampling pane scrolls when space
+is limited so controls retain their natural height. Show sample points toggles the
 preview; Show points through geometry reveals interior samples. Clear generated
 datasets removes all in-memory datasets. Samples are generated in a separate
 process, with cancellation; errors retain previous datasets. Geometry replacement
