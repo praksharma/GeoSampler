@@ -9,6 +9,9 @@ when needed. Grid and axes can be toggled independently.
 Reset view returns to the default isometric camera; it fits the loaded geometry.
 
 Left: Geometry and Regions. Right: Properties. Bottom: optional Results pane.
+Properties, Sampling and Results scroll within their panes when content grows;
+the geometry tree also has scrollbars. Selecting many entities keeps neighbouring
+panes available. Properties and Results text can be selected and copied.
 Use View to show/hide panes; drag their titles to rearrange or detach them.
 View → Reset layout restores the initial layout. Window geometry, panel layout,
 and theme persist between launches. The Results pane starts hidden on first launch.

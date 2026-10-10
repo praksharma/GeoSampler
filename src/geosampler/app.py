@@ -6,7 +6,7 @@ import json
 from PySide6.QtCore import QProcess, QSettings, Qt
 from PySide6.QtGui import QActionGroup
 from PySide6.QtWidgets import (QApplication, QComboBox, QDockWidget, QLabel,
-    QMainWindow, QMessageBox, QToolBar, QTreeWidget, QTreeWidgetItem, QFileDialog, QAbstractItemView)
+    QMainWindow, QMessageBox, QToolBar, QTreeWidget, QTreeWidgetItem, QFileDialog, QAbstractItemView, QScrollArea, QSizePolicy)
 from . import __version__
 from .theme import configure_theme
 from .viewport import Viewport
@@ -77,13 +77,13 @@ class MainWindow(QMainWindow):
         properties.setTextFormat(Qt.TextFormat.PlainText)
         properties.setMargin(16)
         properties.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.properties_dock = self.dock("Properties", "properties", properties, Qt.DockWidgetArea.RightDockWidgetArea)
+        self.properties_dock = self.dock("Properties", "properties", self.scrollable_text(properties), Qt.DockWidgetArea.RightDockWidgetArea)
         results = QLabel("No samples generated.")
         self.sample_results = results
         results.setWordWrap(True)
         results.setTextFormat(Qt.TextFormat.PlainText)
         results.setMargin(16)
-        self.results_dock = self.dock("Results", "results", results, Qt.DockWidgetArea.BottomDockWidgetArea)
+        self.results_dock = self.dock("Results", "results", self.scrollable_text(results), Qt.DockWidgetArea.BottomDockWidgetArea)
         self.results_dock.hide()
         self.sampling = SamplingPanel(self)
         self.sampling_dock = self.dock("Sampling", "sampling", self.sampling, Qt.DockWidgetArea.RightDockWidgetArea)
@@ -109,6 +109,17 @@ class MainWindow(QMainWindow):
             self.restoreGeometry(self.settings.value("geometry"))
         if self.settings.contains("layout"):
             self.restoreState(self.settings.value("layout"))
+
+    @staticmethod
+    def scrollable_text(label):
+        label.setAlignment(Qt.AlignmentFlag.AlignTop)
+        label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setWidget(label)
+        return scroll
 
     def dock(self, title, name, widget, area):
         dock = QDockWidget(title, self)
