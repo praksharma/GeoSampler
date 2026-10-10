@@ -31,6 +31,8 @@ and its details; check or uncheck labels to show or hide their points.
 Right-click faces for visibility controls, or sampled areas to rename and recolour them.
 Use **Export samples** in the Sampling pane or File menu to save all datasets
 as NetCDF (default) or NPZ. Each label is an independent coordinate array.
+Use **Parametrisation…** below Sampled Areas to preview/export a translation
+of the whole domain or selected clouds, and save/load its setup.
 Methods: random, regular grid, LHS, Sobol, Halton, Hammersley, and stratified.
 Sampling uses **Multicore** mode by default. Set CPU cores or choose
 **Reproducible** mode when you need repeatable meshing. See the guide for

@@ -260,6 +260,54 @@ class GeometryTest(unittest.TestCase):
                 with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=(str(nc_path),'NetCDF (*.nc)')), patch('geosampler.export.export_samples',side_effect=OSError('Disk full')), patch('geosampler.app.QMessageBox.warning') as warning:
                     window.export_samples()
                     warning.assert_called_once()
+                # Explicit translation preview is reversible and never accumulates.
+                window.parametrisation_button.click()
+                dialog = window.parametrisation_dialog
+                self.assertIsNotNone(dialog)
+                self.assertFalse(window.sampling.isEnabled())
+                self.assertFalse(window.open_action.isEnabled())
+                self.assertTrue(window.view.isEnabled())
+                originals = json.dumps(window.sampling.batches)
+                for spin, value in zip(dialog.offsets, (.3, -.1, .2)): spin.setValue(value)
+                dialog.preview()
+                self.wait_for(lambda: json.loads(self.javascript(window,'JSON.stringify(window.geoViewer.diagnostics().geometryOffset)'))==[.3,-.1,.2])
+                dialog.preview()
+                self.assertEqual(json.loads(self.javascript(window,'JSON.stringify(window.geoViewer.diagnostics().sampleOffsets.boundary)')),[.3,-.1,.2])
+                dialog.scope.setCurrentIndex(1)
+                for i in range(dialog.regions.count()):
+                    item = dialog.regions.item(i)
+                    item.setCheckState(Qt.CheckState.Checked if item.text()=='boundary' else Qt.CheckState.Unchecked)
+                dialog.preview()
+                self.wait_for(lambda: json.loads(self.javascript(window,'JSON.stringify(window.geoViewer.diagnostics().geometryOffset)'))==[0,0,0])
+                self.assertEqual(json.loads(self.javascript(window,'JSON.stringify(window.geoViewer.diagnostics().sampleOffsets.boundary)')),[.3,-.1,.2])
+                self.assertEqual(json.loads(self.javascript(window,'JSON.stringify(window.geoViewer.diagnostics().sampleOffsets.outlet)')),[0,0,0])
+                self.assertEqual(json.dumps(window.sampling.batches),originals)
+                setup_path = Path(directory)/'translation.json'
+                with patch('geosampler.parametrisation_panel.QFileDialog.getSaveFileName', return_value=(str(setup_path),'JSON (*.json)')):
+                    dialog.save()
+                dialog.offsets[0].setValue(9)
+                with patch('geosampler.parametrisation_panel.QFileDialog.getOpenFileName', return_value=(str(setup_path),'JSON (*.json)')):
+                    dialog.load()
+                self.assertEqual(dialog.offsets[0].value(),.3)
+                self.assertIsNone(window.view.translation_preview)
+                translated_path=Path(directory)/'translated.nc'
+                with patch('geosampler.parametrisation_panel.QFileDialog.getSaveFileName', return_value=(str(translated_path),'NetCDF (*.nc)')):
+                    dialog.export_configuration()
+                with xr.open_dataset(translated_path,engine='scipy') as exported:
+                    np.testing.assert_array_equal(exported.boundary.values,np.asarray(window.sampling.batches[0]['coordinates'])+[.3,-.1,.2])
+                    np.testing.assert_array_equal(exported.outlet.values,window.sampling.batches[1]['coordinates'])
+                    np.testing.assert_array_equal(exported['_gs_translation'],[.3,-.1,.2])
+                dialog.tabs.setCurrentIndex(0)
+                self.app.processEvents()
+                dialog.grab().save('/tmp/geosampler-parametrisation-preview.png')
+                dialog.preview()
+                dialog.reject()
+                self.wait_for(lambda: json.loads(self.javascript(window,'JSON.stringify(window.geoViewer.diagnostics().sampleOffsets.boundary)'))==[0,0,0])
+                self.assertEqual(json.dumps(window.sampling.batches),originals)
+                self.assertIsNone(window.view.translation_preview)
+                self.assertIsNone(window.parametrisation_dialog)
+                self.assertTrue(window.sampling.isEnabled())
+                self.assertTrue(window.open_action.isEnabled())
                 self.assertEqual(len(window.sampling.batches),2)
                 window.sampling.clear_batches()
                 self.assertFalse(window.sampled_areas.items)

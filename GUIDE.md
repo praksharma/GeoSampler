@@ -384,3 +384,44 @@ generation. Hidden/isolation state and coordinates survive renaming. Exports use
 the new labels and include each region's colour in its metadata. Canceling either
 dialog leaves the region unchanged. These display choices last for the current
 session; saved project/session loading remains future work.
+
+### Parametrisation: first translation slice
+
+Generate normal boundary/interior samples, then click **Parametrisation…** below
+Sampled Areas. The separate workspace has Parameters, Combinations, Processing
+and Export tabs. This first stage supports **one translation configuration**:
+set X/Y/Z displacements in source geometry units, choose a scope, then explicitly
+preview or process/export. Editing values does not trigger processing; an active
+preview is marked as out of date until Preview configuration is clicked again.
+
+**Whole domain** translates the geometry display and every sampled cloud together.
+**Selected regions** translates only checked clouds and leaves CAD fixed; its
+boundary/interior consistency is explicitly unverified. Translation does not
+modify the source CAD file. Existing normals, if present in input metadata, are
+unchanged by translation; generating normals is still future work.
+
+Preview uses object offsets from originals and is reversible, including repeated
+previews and switching scopes. Restore, Close and Escape return to original
+coordinates. The viewport remains interactive; editing source datasets and opening
+another model are disabled while the workspace is open. Existing visibility and
+region colours are preserved. Export processes current parameter values from the
+original samples independently of whichever preview is displayed.
+
+Each export contains all regions (including hidden/unaffected ones) as independent
+N×3 arrays, original sampling metadata and per-region transformation metadata.
+`_gs_translation` stores the three values with `_gs_parameter` names
+`translation_x`, `translation_y`, `translation_z`. Global JSON metadata records
+scope, selected regions and configuration count. NetCDF uses the existing NetCDF3
+export backend; NPZ opens with `allow_pickle=False`. Writes are atomic.
+
+Save/load a lightweight JSON setup containing translation, scope, region labels
+and source geometry hash. It contains no generated coordinates. Loading rejects
+a different model or missing selected-region labels, and never processes samples
+automatically. Regenerate the original datasets before reusing a saved setup.
+Setup save/load is separate from full project persistence.
+
+Next stages: rotation and positive scaling with pivots and explicit composition
+order; Cartesian/LHS/Sobol/random parameter sweeps; cancellable processing and
+incremental NetCDF4 grouped output; CAD regeneration and recipe resampling.
+Ranges, batch processing, DataTree exports and dimensional changes such as hole
+radius are **not implemented** in this first slice.

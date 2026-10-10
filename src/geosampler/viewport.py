@@ -46,6 +46,7 @@ class Viewport(QWidget):
         self.is_ready = False
         self.geometry = None
         self.samples = {"batches": [], "visible": True, "through": True, "size": 7}
+        self.translation_preview = None
         self.selection = []
         self.mode = "face"
         self.show_grid = False
@@ -106,6 +107,7 @@ class Viewport(QWidget):
         self.call("setSelection", self.selection)
         self.call("setSamples", self.samples)
         self.call("setGeometryVisibility",self.geometry_visibility)
+        self.call("setTranslationPreview",self.translation_preview)
 
     def set_mode(self, mode):
         self.mode = mode
@@ -122,3 +124,7 @@ class Viewport(QWidget):
     def set_sample_style(self, style):
         self.samples.update(style)
         self.call("setSampleStyle", style)
+
+    def set_translation_preview(self, setup):
+        self.translation_preview = setup
+        self.call('setTranslationPreview', setup)

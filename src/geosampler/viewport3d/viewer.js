@@ -25,6 +25,7 @@ const raycaster=new THREE.Raycaster();
 const key=o=>`${o.userData.dimension}:${o.userData.tag}`;
 let palette={face:0x75a8b5,edge:0x304650};
 let sampleObjects=[];
+let translationPreview=null,previewOffset=new THREE.Vector3();
 let geometryVisibility={geometry:true,faces:true,edges:true,isolatedEntities:null,hiddenFaces:[],isolatedFaces:null};
 function setGeometryVisibility(config){
   geometryVisibility={...geometryVisibility,...config};
@@ -36,6 +37,21 @@ function setGeometryVisibility(config){
   }
   hover=null;recolor();
 }
+function applyTranslationPreview(){
+  const offset=new THREE.Vector3(...(translationPreview?.translation??[0,0,0]));
+  const whole=translationPreview?.scope==='domain';
+  const geometryOffset=whole?offset:new THREE.Vector3();
+  const change=geometryOffset.clone().sub(previewOffset);
+  center.add(change);camera.position.add(change);controls.target.add(change);
+  previewOffset.copy(geometryOffset);
+  for(const object of objects)object.position.copy(geometryOffset);
+  for(const object of sampleObjects){
+    const affected=whole||translationPreview?.regions.includes(object.userData.label);
+    object.position.copy(affected?offset:new THREE.Vector3());
+  }
+  controls.update();
+}
+function setTranslationPreview(setup){translationPreview=setup;applyTranslationPreview();}
 function stopMotion(){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();controls.enableDamping=damping;}
 function resize(){camera.aspect=Math.max(innerWidth,1)/Math.max(innerHeight,1);camera.updateProjectionMatrix();renderer.setSize(Math.max(innerWidth,1),Math.max(innerHeight,1));}
 function fit(direction){
@@ -70,6 +86,7 @@ function appearance(config){
   palette={face:dark?0x6196ad:0x75a8b5,edge:dark?0xd0e4ec:0x304650};recolor();
 }
 function loadGeometry(data){
+  translationPreview=null;previewOffset.set(0,0,0);
   for(const object of objects){scene.remove(object);object.traverse(part=>{part.geometry?.dispose();part.material?.dispose();});}
   objects=[];faces=[];edges=[];selected.clear();hover=null;down=null;documentId=data.document;
   const box=new THREE.Box3();
@@ -156,14 +173,15 @@ function setSamples(config){
     scene.add(object);sampleObjects.push(object);
   }
   setSampleStyle({size:config.size??7,visible:config.visible,through:config.through,hiddenLabels:config.hiddenLabels??[],isolatedLabel:config.isolatedLabel??null,colours:config.colours??{}});
+  applyTranslationPreview();
 }
 function diagnostics(){
   const gl=renderer.getContext(),extension=gl.getExtension('WEBGL_debug_renderer_info');
   return {renderer:gl.getParameter(extension?extension.UNMASKED_RENDERER_WEBGL:gl.RENDERER),
     vendor:gl.getParameter(extension?extension.UNMASKED_VENDOR_WEBGL:gl.VENDOR),
-    version:gl.getParameter(gl.VERSION),lost:gl.isContextLost(),visibleFaces:faces.filter(o=>o.visible).length,visibleEdges:edges.filter(o=>o.visible).length,sampleColours:Object.fromEntries(sampleObjects.map(o=>[o.userData.label,`#${o.material.color.getHexString()}`])),selectionCount:selected.size,pointSize:sampleStyle.size,sampleVisible:sampleStyle.visible,visibleSampleCount:sampleObjects.reduce((n,o)=>n+(o.visible?o.geometry.attributes.position.count:0),0),sampleCount:sampleObjects.reduce((n,o)=>n+o.geometry.attributes.position.count,0)};
+    version:gl.getParameter(gl.VERSION),lost:gl.isContextLost(),visibleFaces:faces.filter(o=>o.visible).length,visibleEdges:edges.filter(o=>o.visible).length,sampleColours:Object.fromEntries(sampleObjects.map(o=>[o.userData.label,`#${o.material.color.getHexString()}`])),preview:translationPreview,sampleOffsets:Object.fromEntries(sampleObjects.map(o=>[o.userData.label,o.position.toArray()])),geometryOffset:previewOffset.toArray(),selectionCount:selected.size,pointSize:sampleStyle.size,sampleVisible:sampleStyle.visible,visibleSampleCount:sampleObjects.reduce((n,o)=>n+(o.visible?o.geometry.attributes.position.count:0),0),sampleCount:sampleObjects.reduce((n,o)=>n+o.geometry.attributes.position.count,0)};
 }
-window.geoViewer={orient,appearance,loadGeometry,setMode,setSelection,setGeometryVisibility,setSamples,setSampleStyle,diagnostics,reset:()=>orient(0)};
+window.geoViewer={setTranslationPreview,orient,appearance,loadGeometry,setMode,setSelection,setGeometryVisibility,setSamples,setSampleStyle,diagnostics,reset:()=>orient(0)};
 renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();window.geoReportFailure('Graphics context lost. Restart the application.');});
 addEventListener('resize',resize);resize();appearance({canvas:'#fafcfc',grid:'#e2e7e8',showGrid:false,showAxes:true});orient(0);setMode('face');
 const clock=new THREE.Clock();renderer.setAnimationLoop(()=>{gizmo.update(clock.getDelta());controls.update();renderer.clear();renderer.render(scene,camera);gizmo.render();});

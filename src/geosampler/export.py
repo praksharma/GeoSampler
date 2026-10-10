@@ -97,3 +97,17 @@ def export_samples(batches, path):
         dataset.close()
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+
+
+def atomic_write(path, writer):
+    """Keep an existing destination intact when writing fails."""
+    path = Path(path)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix=f'.{path.name}.', suffix='.tmp', dir=path.parent, delete=False) as stream:
+            temporary = Path(stream.name)
+        writer(temporary)
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)

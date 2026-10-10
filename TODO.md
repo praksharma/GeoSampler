@@ -137,3 +137,17 @@ readers are outside the initial scope and require separate evaluation.
 - [x] Geometry tree context menu: hide selected faces, isolate selected faces, show all faces.
 - [x] Sampled Areas context menu: rename, change colour, visibility and isolation.
 - [x] Preserve coordinates and visibility across renaming; export new labels and colour metadata.
+
+## Parametrisation workspace
+
+- [x] Separate workspace accessible below Sampled Areas, with four tabs.
+- [x] Single translation configuration: whole domain or selected-region augmentation.
+- [x] Explicit reversible preview from originals; preserve coordinates, visibility and colours.
+- [x] NetCDF/NPZ export with named parameter values and transformation provenance.
+- [x] Save/load lightweight setup; validate source geometry and region references.
+- [ ] Rotation and positive scaling, pivots, composition order and normal handling.
+- [ ] Cartesian/LHS/Sobol/random configuration sweeps and constraints.
+- [ ] Background, cancellable batch/export-only processing with progress and bounded memory.
+- [ ] NetCDF4/DataTree groups with incremental writes; NPZ shards and manifest.
+- [ ] CAD dimensional regeneration, stored sampling recipes and region tracking.
+- [ ] Geometry-aware consistency checks for independent region transformations.

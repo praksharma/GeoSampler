@@ -6,7 +6,7 @@ import json
 from PySide6.QtCore import QProcess, QSettings, Qt, QSize, QSignalBlocker
 from PySide6.QtGui import QActionGroup, QColor
 from PySide6.QtWidgets import (QApplication, QComboBox, QDockWidget, QLabel,
-    QMainWindow, QMessageBox, QToolBar, QTreeWidget, QTreeWidgetItem, QFileDialog, QAbstractItemView, QScrollArea, QSizePolicy, QSplitter, QMenu, QInputDialog, QColorDialog)
+    QMainWindow, QMessageBox, QToolBar, QTreeWidget, QTreeWidgetItem, QFileDialog, QAbstractItemView, QScrollArea, QSizePolicy, QSplitter, QMenu, QInputDialog, QColorDialog, QPushButton, QWidget, QVBoxLayout)
 from . import __version__
 from .theme import configure_theme
 from .viewport import Viewport
@@ -123,7 +123,16 @@ class MainWindow(QMainWindow):
         self.left_splitter.addWidget(self.sampled_areas)
         self.left_splitter.setChildrenCollapsible(False)
         self.left_splitter.setSizes([350, 350])
-        self.geometry_dock = self.dock("Geometry and Sampled Areas", "geometry", self.left_splitter, Qt.DockWidgetArea.LeftDockWidgetArea)
+        sidebar = QWidget()
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_layout.addWidget(self.left_splitter)
+        self.parametrisation_button = QPushButton('Parametrisation…')
+        self.parametrisation_button.setToolTip('Configure, preview and export translations of sampled datasets')
+        self.parametrisation_button.clicked.connect(self.open_parametrisation)
+        sidebar_layout.addWidget(self.parametrisation_button)
+        self.parametrisation_dialog = None
+        self.geometry_dock = self.dock("Geometry and Sampled Areas", "geometry", sidebar, Qt.DockWidgetArea.LeftDockWidgetArea)
         properties = QLabel("No geometry selected.")
         self.properties = properties
         properties.setWordWrap(True)
@@ -160,6 +169,40 @@ class MainWindow(QMainWindow):
         if self.settings.contains("layout"):
             self.restoreState(self.settings.value("layout"))
         self.refresh_icons()
+
+    def open_parametrisation(self):
+        if self.sampling.process or self.import_process:
+            QMessageBox.information(self, 'Parametrisation', 'Wait for current processing to finish.')
+            return
+        if not self.sampling.batches:
+            QMessageBox.information(self, 'Parametrisation', 'Generate boundary or interior samples first.')
+            return
+        if self.parametrisation_dialog is not None:
+            self.parametrisation_dialog.show()
+            self.parametrisation_dialog.raise_()
+            self.parametrisation_dialog.activateWindow()
+            return
+        from .parametrisation_panel import ParametrisationDialog
+        self.parametrisation_dialog = ParametrisationDialog(self)
+        # Keep the viewport interactive while protecting the preview's originals.
+        self.sampling.setEnabled(False)
+        self.tree.setEnabled(False)
+        self.sampled_areas.setEnabled(False)
+        self.open_action.setEnabled(False)
+        self.export_action.setEnabled(False)
+        self.parametrisation_dialog.finished.connect(self.finish_parametrisation)
+        self.parametrisation_dialog.show()
+
+    def finish_parametrisation(self):
+        dialog = self.parametrisation_dialog
+        self.parametrisation_dialog = None
+        self.sampling.setEnabled(True)
+        self.tree.setEnabled(True)
+        self.sampled_areas.setEnabled(True)
+        self.open_action.setEnabled(True)
+        self.export_action.setEnabled(bool(self.sampling.batches))
+        if dialog is not None:
+            dialog.deleteLater()
 
     def tool_action(self, title, icon, tooltip, callback=None):
         action = self.toolbar.addAction(title)
@@ -553,6 +596,8 @@ class MainWindow(QMainWindow):
         self.properties.setText("\n".join(lines))
 
     def closeEvent(self, event):
+        if self.parametrisation_dialog is not None:
+            self.parametrisation_dialog.reject()
         self.sampling.shutdown()
         if self.import_process:
             process = self.import_process
