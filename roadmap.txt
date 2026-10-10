@@ -1,0 +1,264 @@
+I'd position this as a general-purpose geometry-aware sampling tool for scientific machine learning, rather than exclusively a PINN utility. That keeps it relevant to PINNs, neural operators, surrogate modelling, and other mesh-free methods.
+
+For now, I'll use GeoSampler as a working name. We can rename it later.
+
+## Suggested GitHub description
+
+An open-source GUI for geometry-aware point sampling in 2D and 3D domains. Import CAD geometries, interactively define and label boundaries, configure advanced sampling strategies, visualise point distributions, and export reproducible datasets for physics-informed neural networks and scientific machine learning.
+
+## Proposed README.md
+
+# GeoSampler
+
+**Geometry-aware point sampling for scientific machine learning**
+
+GeoSampler is an open-source desktop application for generating spatial and parametric point datasets from 2D and 3D geometries.
+
+It provides an interactive graphical interface for importing CAD geometries, identifying and labelling boundaries, configuring sampling strategies, refining point distributions, and exporting structured datasets.
+
+GeoSampler is designed primarily for **Physics-Informed Neural Networks (PINNs)**, but it is independent of any particular machine-learning framework, governing equation, or numerical solver.
+
+## Motivation
+
+Generating training points for PINNs is straightforward in simple rectangular domains but becomes increasingly complicated when working with realistic engineering geometries.
+
+Curved boundaries, internal holes, complex surfaces, and non-uniform sampling requirements often demand custom geometry-specific scripts.
+
+GeoSampler aims to eliminate much of this repetitive work through a reusable, interactive point-generation environment.
+
+## Core Features
+
+### 1. Geometry Import and Visualisation
+
+- Support for 2D and 3D geometries.
+- Import common CAD and geometry formats, including STEP and STL.
+- Interactive geometry visualisation.
+- Select individual faces, edges, and vertices.
+- Highlight, isolate, and hide selected geometric regions.
+- Support geometries containing holes and multiple boundary regions.
+
+### 2. User-Defined Boundary Regions
+
+- Interactively select one or more faces or edges.
+- Assign arbitrary user-defined labels.
+- Group multiple geometric entities under a single label.
+- No predefined boundary-condition types or physics assumptions.
+- Allow regions to remain unlabelled.
+- Independently configure sampling for labelled and unlabelled regions.
+
+GeoSampler treats boundary labels as metadata. It does not interpret or enforce physical boundary conditions.
+
+### 3. Sampling Methods
+
+Planned sampling strategies include:
+
+- Uniform random sampling.
+- Regular grid sampling.
+- Latin Hypercube Sampling (LHS).
+- Sobol sequences.
+- Halton sequences.
+- Hammersley sequences.
+- Stratified sampling.
+- Other extensible sampling strategies.
+
+Sampling will support both domain interiors and geometric boundaries, with appropriate geometric constraints.
+
+### 4. Sampling Configuration and Refinement
+
+- Configure sampling independently for each region.
+- Specify the number of sample points.
+- Apply global or region-specific sampling strategies.
+- Increase sampling density around selected locations.
+- Refine near corners, edges, and geometric features.
+- Support distance-based and user-defined spatial sampling densities.
+- Control random seeds for reproducibility.
+- Preview sampling distributions before export.
+
+### 5. Geometry Parametrisation
+
+Define families of related geometries through geometric parameters.
+
+Potential capabilities include:
+
+- Parametric lengths, widths, radii, and thicknesses.
+- Moving or rotating geometric features.
+- Parameter-dependent boundary positions.
+- Multiple geometric parameters.
+- Cartesian-product parameter combinations.
+- LHS and quasi-random sampling of parameter spaces.
+- Automatic point generation across geometry configurations.
+- Parameter-dependent boundary identification.
+
+#### Parametric Visualisation
+
+Instead of directly visualising high-dimensional geometries, GeoSampler will provide:
+
+- Interactive parameter sliders.
+- Arrows indicating geometric movement.
+- Minimum and maximum geometry overlays.
+- Highlighting of parametrised features.
+- Interactive previews of selected parameter configurations.
+
+### 6. Dataset Export
+
+Primary export formats:
+
+- **xarray:** Structured, labelled multidimensional datasets.
+- **NumPy NPZ:** Dictionary-based compressed arrays.
+
+Exported data may include:
+
+- Spatial coordinates.
+- Geometric parameter values.
+- Boundary and region labels.
+- Surface normal vectors where applicable.
+- Sampling configurations and metadata.
+- Random seeds for reproducibility.
+
+GeoSampler does not calculate PDE solutions or prescribe boundary values. Solution data, if required, must be obtained independently.
+
+### 7. Project Management
+
+- Save and reopen sampling projects.
+- Preserve geometry references and region definitions.
+- Store sampling strategies and refinement configurations.
+- Regenerate datasets using saved settings.
+- Support reproducible research workflows.
+
+---
+
+## Development Roadmap
+
+### Phase 1 — Application Foundation
+
+- Establish application architecture.
+- Integrate reusable 2D/3D viewport components.
+- Implement geometry import.
+- Implement face, edge, and vertex selection.
+- Add geometry visibility and highlighting controls.
+- Introduce project save/load functionality.
+
+### Phase 2 — Region Definition
+
+- Create, rename, and delete user-defined regions.
+- Assign faces and edges to regions.
+- Support multiple geometric entities per region.
+- Visualise regions using distinct colours.
+- Maintain unlabelled geometry as a valid state.
+
+### Phase 3 — Sampling Engine
+
+- Implement interior point generation.
+- Implement boundary point generation.
+- Implement random, LHS, and quasi-random sampling.
+- Implement surface sampling for curved geometries.
+- Support independent sampling configurations.
+- Add reproducible random seeds.
+- Display generated samples within the viewport.
+
+### Phase 4 — Data Export and First Release
+
+- Implement xarray dataset export.
+- Implement NumPy NPZ export.
+- Export region labels and sampling metadata.
+- Implement sample validation and geometry checks.
+- Add automated tests and example geometries.
+- Write installation and usage documentation.
+- Publish the first stable release.
+
+### Phase 5 — Advanced Sampling
+
+- Implement local refinement around selected locations.
+- Implement distance-based sampling distributions.
+- Introduce spatial density functions.
+- Support user-defined sampling distributions.
+- Implement sampling-density visualisation.
+- Support configurable oversampling of geometric features.
+
+### Phase 6 — Parametric Geometries
+
+- Introduce a geometry parameter system.
+- Support parametric dimensions and positions.
+- Implement interactive parameter controls.
+- Visualise parameter ranges and geometric movement.
+- Implement parameter-space sampling.
+- Generate samples across multiple geometry configurations.
+- Track named regions across geometry changes.
+- Export parametric datasets with associated metadata.
+
+### Phase 7 — Extensibility and Optimisation
+
+- Introduce a plugin-friendly sampling interface.
+- Support custom sampling algorithms.
+- Implement batch dataset generation.
+- Optimise large-scale point generation.
+- Support memory-efficient generation and export.
+- Improve performance for complex 3D geometries.
+
+---
+
+## Design Philosophy
+
+**Geometry first.** Sampling should be driven by actual geometry rather than hard-coded coordinate constraints.
+
+**Physics agnostic.** The software does not impose governing equations, boundary conditions, or solution methods.
+
+**User controlled.** Researchers decide which regions to sample, how to name them, and how points should be distributed.
+
+**Reproducible.** Sampling configurations and random seeds should be preserved.
+
+**Framework independent.** Exported datasets should be usable with PyTorch, JAX, TensorFlow, NumPy, or other scientific computing tools.
+
+**Open and extensible.** Sampling algorithms and geometry-processing components should remain modular and reusable.
+
+## Project Status
+
+GeoSampler is in the planning and early development stage. Features and milestones may evolve as the project progresses.
+
+## Citation
+
+The software will be archived on Zenodo with a persistent DOI following its first public release.
+
+## Licence
+
+Open-source licence to be determined.
+
+## My suggested release milestones
+
+## v0.1
+
+Prototype
+
+Geometry import, region selection and basic sampling
+
+First demonstrable end-to-end workflow using a fixed geometry.
+
+## v0.2
+
+Beta
+
+Advanced sampling, xarray/NPZ exports and project files
+
+First version practical for researchers.
+
+## v0.3
+
+Parametric
+
+Geometry parametrisation and higher-dimensional sampling
+
+Multiple geometry configurations, parameter-space sampling and interactive visualisation.
+
+## v1.0
+
+Stable
+
+Validated, documented, reproducible scientific software
+
+Stable APIs, example problems, automated tests and DOI-backed publication.
+
+One thing I would particularly emphasise during development is geometric correctness. A beautiful distribution of points is worthless if some lie outside the domain, surface sampling is biased unintentionally, or region labels are assigned incorrectly.
+
+I'd make numerical and geometric validation a release requirement rather than an optional feature.
+
+For the repository, I'd eventually split this material into `README.md`, `ROADMAP.md`, and `docs/architecture.md`. The README above is a good starting draft; the roadmap can then evolve independently.

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GeoSampler 3D viewport</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fafcfc}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#orientation-gizmo{position:absolute;right:0;bottom:0;width:128px;height:128px;touch-action:none;cursor:pointer}
+#orientation-gizmo:focus-visible{outline:2px solid #3786bd;outline-offset:-2px}
+.gizmo-home{position:absolute;right:6px;top:2px;border:1px solid #7d8c95;background:#f4f8fa;color:#24333c;border-radius:3px;height:24px;padding:0 5px;font:11px sans-serif;cursor:pointer}
+#error{position:absolute;inset:16px;font:14px sans-serif;color:#bd3549;white-space:pre-wrap;pointer-events:none;z-index:2}
+</style>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head><body><div id="error" role="alert"></div>
+<script>
+window.geoBridge=null;window.geoRendererReady=false;window.geoFailure=null;
+window.geoReportFailure=message=>{window.geoFailure=message;document.getElementById('error').textContent='3D renderer could not start: '+message;window.geoBridge?.failed(message);};
+addEventListener('error',event=>window.geoReportFailure(event.message));
+addEventListener('unhandledrejection',event=>window.geoReportFailure(String(event.reason)));
+if(window.qt){const script=document.createElement('script');script.src='qrc:///qtwebchannel/qwebchannel.js';script.onload=()=>new QWebChannel(qt.webChannelTransport,channel=>{window.geoBridge=channel.objects.bridge;if(window.geoFailure)window.geoBridge.failed(window.geoFailure);else if(window.geoRendererReady)window.geoBridge.ready();});document.head.appendChild(script);}
+</script><script type="module" src="viewer.js"></script></body></html>
