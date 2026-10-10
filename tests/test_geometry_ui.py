@@ -142,6 +142,8 @@ class GeometryTest(unittest.TestCase):
                     self.assertEqual(batch['entities'],[[2,tag]])
                     self.assertEqual(set(batch['entity_tags']),{tag})
                     self.assertEqual(batch['count'],128)
+                    self.assertEqual(batch['compute_mode'],'multicore')
+                    self.assertEqual(batch['cpu_threads'],window.sampling.cpu_threads.value())
                 self.assertEqual(window.sampling.next_available_label('boundary'),'boundary_2')
                 self.assertEqual(window.sampling.next_available_label('boundary_1'),'boundary_2')
                 self.assertEqual(window.sampling.next_available_label('inlet'),'inlet')

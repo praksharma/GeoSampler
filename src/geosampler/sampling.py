@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.stats import qmc
 
 from .sampling_methods import METHODS
 
@@ -27,6 +26,8 @@ def unit_points(method, count, dimension, seed):
     """Design points in a unit cube. Grid retains complete Cartesian layers."""
     if method not in METHODS or not 1 <= count <= 500000 or not 1 <= dimension <= 4:
         raise ValueError('Invalid sampling method, count or dimension.')
+    if method in ('lhs','sobol','halton'):
+        from scipy.stats import qmc
     rng = np.random.default_rng(seed)
     if method == 'random':
         return rng.random((count, dimension))
@@ -187,7 +188,9 @@ def _surface_samples(gmsh, tags, method, count, seed):
 
 def _volume_samples(gmsh, tags, method, count, seed):
     node_tags, coords, _ = gmsh.model.mesh.getNodes()
-    positions = {int(t): xyz for t, xyz in zip(node_tags, np.array(coords).reshape(-1, 3))}
+    node_order = np.argsort(node_tags)
+    sorted_tags = np.asarray(node_tags)[node_order]
+    positions = np.asarray(coords).reshape(-1,3)[node_order]
     tetra, owners = [], []
     for tag in tags:
         types, _, blocks = gmsh.model.mesh.getElements(3, tag)
@@ -195,9 +198,11 @@ def _volume_samples(gmsh, tags, method, count, seed):
             _, _, _, nodes, _, primary = gmsh.model.mesh.getElementProperties(kind)
             if primary != 4:
                 raise ValueError('Interior sampling currently requires tetrahedral volume elements.')
-            for row in np.array(block).reshape(-1, nodes):
-                tetra.append([positions[int(t)] for t in row[:4]]);owners.append(tag)
-    tetra = np.array(tetra);owners = np.array(owners)
+            rows = np.asarray(block).reshape(-1,nodes)[:,:4]
+            tetra.append(positions[np.searchsorted(sorted_tags,rows)])
+            owners.append(np.full(len(rows),tag,dtype=int))
+    tetra = np.concatenate(tetra) if tetra else np.empty((0,4,3))
+    owners = np.concatenate(owners) if owners else np.empty(0,dtype=int)
     if not len(tetra):
         raise ValueError('No tetrahedra were generated for the volume.')
     matrix = np.stack([tetra[:, i]-tetra[:, 0] for i in (1, 2, 3)], axis=-1)
@@ -233,11 +238,19 @@ def sample_geometry(request):
     method, count, seed = request['method'], request['count'], request['seed']
     if method not in METHODS or not isinstance(count, int) or not 1 <= count <= 50000 or not isinstance(seed, int) or not 0 <= seed < 2**32:
         raise ValueError('Invalid sampling settings.')
+    mode = request.get('compute_mode','reproducible')
+    threads = request.get('cpu_threads',1)
+    if mode not in ('multicore','reproducible') or isinstance(threads,bool) or not isinstance(threads,int) or not 1<=threads<=64:
+        raise ValueError('Invalid CPU sampling settings.')
+    threads = threads if mode=='multicore' else 1
     gmsh.initialize(['geosampler'], readConfigFiles=False)
     try:
         gmsh.option.setNumber('General.Terminal', 0)
         gmsh.open(str(path))
-        gmsh.option.setNumber('General.NumThreads', 1)
+        gmsh.option.setNumber('General.NumThreads', threads)
+        for axis in (1,2,3):
+            gmsh.option.setNumber(f'Mesh.MaxNumThreads{axis}D',threads)
+        gmsh.option.setNumber('Mesh.Reproducible',1 if mode=='multicore' else 0)
         gmsh.option.setNumber('Mesh.RandomSeed', 1)
         if request['target'] == 'interior':
             dim = 3 if gmsh.model.getEntities(3) else 2
@@ -263,6 +276,8 @@ def sample_geometry(request):
             gmsh.option.setNumber('Mesh.MeshSizeMax', extent / request.get('resolution', 32))
             gmsh.option.setNumber('Mesh.ElementOrder', 1)
             gmsh.option.setNumber('Mesh.RecombineAll', 0)
+            if mode=='multicore' and dim==3:
+                gmsh.option.setNumber('Mesh.Algorithm3D',10)  # Gmsh's parallel HXT mesher.
             gmsh.model.mesh.generate(dim)
             gmsh.model.mesh.setOrder(1)
         if dim == 1:
@@ -279,12 +294,16 @@ def sample_geometry(request):
             notes.append('The method defines candidate-space coverage. Geometric transformation and rejection do not preserve strict Cartesian LHS, stratification, or Sobol balance guarantees.')
         if method == 'sobol' and count & (count-1):
             notes.append('Sobol designs have their strongest balance properties at power-of-two counts.')
+        if mode=='multicore':
+            notes.append('Multicore meshing can change the numerical mesh and coordinates across runs or thread counts; use Reproducible mode for repeatable meshes.')
         return {'document': request['document'], 'label': request['label'], 'target': request['target'],
                 'entities': [[dim, t] for t in tags], 'method': method, 'seed': seed,
                 'requested_count': count, 'count': len(points), 'coordinates': points.tolist(),
                 'entity_tags': point_tags.astype(int).tolist(), 'entity_dimension': dim,
                 'source': str(path), 'source_hash': digest, 'notes': notes,
-                'resolution': request.get('resolution', 32)}
+                'resolution': request.get('resolution', 32), 'compute_mode':mode,
+                'cpu_threads':threads, 'mesh_algorithm_2d':int(gmsh.option.getNumber('Mesh.Algorithm')),
+                'mesh_algorithm_3d':int(gmsh.option.getNumber('Mesh.Algorithm3D'))}
     finally:
         gmsh.finalize()
 

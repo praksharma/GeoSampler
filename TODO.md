@@ -126,4 +126,8 @@ readers are outside the initial scope and require separate evaluation.
 
 - [ ] Additional sampling strategies and local density refinement.
 - [ ] Parametric geometry families and stable region tracking.
-- [ ] Batch generation and performance optimisation.
+- [x] Profile generation and add multicore Gmsh/HXT meshing with CPU-core control,
+      reproducible fallback, lazy scientific imports and vectorized volume setup.
+- [ ] Cache/reuse geometry preparation and support batch generation.
+- [ ] Evaluate GPU/JIT acceleration if candidate mapping or clipping becomes
+      the measured bottleneck.

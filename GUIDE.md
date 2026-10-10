@@ -311,3 +311,58 @@ normal visibility choices without changing them. Clearing datasets or replacing
 the geometry exits isolation. These controls affect only display: geometry,
 selection, sampling settings and generated coordinates are retained, and export
 includes hidden and non-isolated datasets.
+
+
+## Sampling performance and CPU modes
+
+Sampling remains isolated from Qt in a cancellable background process. It now
+starts in **Multicore** mode in the GUI, with up to four CPU cores by default
+(capped by the process's available CPUs). The CPU cores control sets the maximum
+Gmsh meshing thread count. Curves/surfaces can mesh in parallel across entities;
+3D interiors use Gmsh's parallel HXT tetrahedral mesher. Some geometry queries,
+trimming/grid clipping and candidate-generation steps remain serial. This is
+multithreaded native meshing inside one background process, not several GUI
+processes. Source meshing options that affect geometry sizing remain in effect.
+
+**Reproducible** mode uses one meshing thread, the source geometry's original
+mesher, and the existing fixed meshing seed. It preserves the previous sampling
+pipeline's coordinates on the tested fixtures. The Qt-independent API defaults
+to this mode when `compute_mode` is omitted. Multicore meshing can produce a
+different numerical mesh and coordinates across runs or core counts, even with
+the same sampling seed. Gmsh's experimental reproducible-mesh option is enabled
+in Multicore mode, but exact repeatability is not promised. Export metadata
+records `compute_mode`, `cpu_threads`, `mesh_algorithm_2d`, and
+`mesh_algorithm_3d`, in addition to the seed and resolution. For 2D/edge sampling,
+the recorded 3D algorithm is a model setting, not an algorithm used by that run.
+
+Volume connectivity preparation now uses NumPy lookup arrays instead of Python
+loops over every tetrahedron. SciPy's sequence generators are loaded only for
+LHS, Sobol or Halton, reducing fresh-worker startup for the other methods. No GPU
+sampling or Numba dependency is introduced; the profiled bottleneck was CPU
+geometry meshing. The NVIDIA GPU continues rendering the viewport.
+
+Measured on the development machine, for 1,000 Uniform random sphere samples:
+
+| Case | Earlier pipeline | Current Multicore, 4 cores |
+| --- | --- | --- |
+| One face, Standard | 1.12 s fresh worker | 0.30 s fresh worker |
+| Interior, Standard | 7.54 s calculation in the initial test | 1.01 s fresh worker |
+| Interior, Fine | 68.07 s profiled calculation (64.19 s meshing) | 3.74 s fresh worker |
+
+The timing columns use different instrumentation for the initial investigation;
+they describe observed latency, not a controlled scaling experiment. A direct
+fresh-worker comparison of the final modes gave 7.30 s Reproducible versus 1.01 s
+Multicore for Standard interior sampling. Speeds depend on source sizing,
+geometry, core count and method. Rendering/result display time is excluded.
+Reproduce the complete fresh-worker comparison with:
+
+```sh
+uv run python tools/benchmark_sampling.py \
+  examples/geometries/cfdbench/sphere_unstructured.geo --mode both --cores 4
+```
+
+Use `--face 6` for boundary sampling or `--resolution 64` for Fine interior.
+The benchmark includes imports, meshing, sampling and JSON result transfer.
+Validation covers multicore HXT interior membership and methods, serial fixture
+reproducibility, unchanged saved baseline coordinates/tags, and GUI generation,
+cancellation, visibility and export with the default Multicore mode.

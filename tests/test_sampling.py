@@ -75,6 +75,20 @@ class SamplingTest(unittest.TestCase):
                 if method!='grid':self.assertEqual(result['count'],128)
                 self.assertTrue(any('tetrahedral' in note for note in result['notes']))
 
+    def test_multicore_mesh_and_metadata(self):
+        for method in ('random','grid','sobol'):
+            request={key:self.sphere[key] for key in ('source','source_hash','document')}
+            request.update(method=method,target='interior',entities=[],count=128,seed=42,label='fast',resolution=16,compute_mode='multicore',cpu_threads=2)
+            result=sample_geometry(request)
+            self.assertEqual(result['cpu_threads'],2)
+            self.assertEqual(result['compute_mode'],'multicore')
+            self.assertEqual(result['mesh_algorithm_3d'],10)
+            self.assertTrue((np.linalg.norm(result['coordinates'],axis=1)<1+1e-9).all())
+            self.assertGreater(result['count'],0)
+            if method!='grid':self.assertEqual(result['count'],128)
+        request['cpu_threads']=0
+        with self.assertRaisesRegex(ValueError,'CPU'):sample_geometry(request)
+
     def test_changed_source_and_invalid_counts(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'changed.geo'

@@ -31,7 +31,9 @@ and its details; check or uncheck labels to show or hide their points.
 Use **Export samples** in the Sampling pane or File menu to save all datasets
 as NetCDF (default) or NPZ. Each label is an independent coordinate array.
 Methods: random, regular grid, LHS, Sobol, Halton, Hammersley, and stratified.
-See the guide for numerical geometry accuracy and grid-count behaviour.
+Sampling uses **Multicore** mode by default. Set CPU cores or choose
+**Reproducible** mode when you need repeatable meshing. See the guide for
+performance measurements, numerical geometry accuracy and grid-count behaviour.
 
 Try the included fixture directly:
 

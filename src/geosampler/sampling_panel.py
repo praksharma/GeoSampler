@@ -1,5 +1,6 @@
 """Sampling controls and isolated background generation."""
 import json
+import os
 import sys
 from PySide6.QtCore import QProcess, Qt
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QComboBox,
@@ -52,6 +53,18 @@ class SamplingPanel(QWidget):
             self.resolution.addItem(title, number)
         self.resolution.setToolTip('Independent sampling tessellation. Fine uses more memory and time; changing it changes the numerical domain approximation.')
         form.addRow('Geometry accuracy', self.resolution)
+        available = min(64,len(os.sched_getaffinity(0)) if hasattr(os,'sched_getaffinity') else (os.cpu_count() or 1))
+        self.compute_mode = QComboBox()
+        self.compute_mode.addItem('Multicore','multicore')
+        self.compute_mode.addItem('Reproducible','reproducible')
+        self.compute_mode.setToolTip('Multicore speeds up geometry meshing. Reproducible uses one meshing thread and the source mesher for repeatable coordinates.')
+        form.addRow('Compute mode',self.compute_mode)
+        self.cpu_threads = QSpinBox()
+        self.cpu_threads.setRange(1,available)
+        self.cpu_threads.setValue(min(4,available))
+        self.cpu_threads.setToolTip('Maximum CPU threads for geometry meshing. Some geometry queries and sampling stages remain serial.')
+        form.addRow('CPU cores',self.cpu_threads)
+        self.compute_mode.currentIndexChanged.connect(self.update_compute_mode)
         layout.addLayout(form)
         self.note = QLabel()
         self.note.setWordWrap(True)
@@ -103,6 +116,9 @@ class SamplingPanel(QWidget):
         self.update_note()
         self.generate.setEnabled(False)
 
+    def update_compute_mode(self):
+        self.cpu_threads.setEnabled(self.process is None and self.compute_mode.currentData()=='multicore')
+
     def update_note(self):
         text = 'Boundary coordinates follow the original curves/surfaces. Surface trim limits and 3D interiors use numerical geometry.'
         if self.method.currentData() == 'grid':
@@ -126,8 +142,9 @@ class SamplingPanel(QWidget):
         self.summary.setText('Select a target and generate a dataset.')
 
     def set_busy(self, busy):
-        for control in (self.target, self.method, self.count, self.seed, self.label, self.resolution):
+        for control in (self.target, self.method, self.count, self.seed, self.label, self.resolution, self.compute_mode, self.cpu_threads):
             control.setEnabled(not busy)
+        self.update_compute_mode()
         self.generate.setEnabled(not busy and self.window.geometry is not None)
         self.cancel.setEnabled(busy)
         self.window.open_action.setEnabled(not busy)
@@ -170,7 +187,8 @@ class SamplingPanel(QWidget):
         request = {key: geometry[key] for key in ('source', 'source_hash', 'document')}
         request.update(target=kind, entities=entities, method=self.method.currentData(),
                        count=self.count.value(), seed=self.seed.value(), label=label,
-                       resolution=self.resolution.currentData())
+                       resolution=self.resolution.currentData(),compute_mode=self.compute_mode.currentData(),
+                       cpu_threads=self.cpu_threads.value() if self.compute_mode.currentData()=='multicore' else 1)
         process = QProcess(self)
         self.process = process
         self.cancelled = False
