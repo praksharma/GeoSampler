@@ -77,7 +77,9 @@ Dragging orbits without selecting. The geometry tree can also select entities
 and automatically switches to their face/edge mode. Properties shows IDs,
 geometry types and imported physical group IDs. Imported groups are read-only.
 
-Hover is teal; selection is orange. Surface triangles map to original faces;
+Hover is teal; selection is orange. Edge hover uses a 4-pixel stroke and
+selected edges use a 6-pixel stroke, maintaining their screen width while
+zooming. Ordinary edges remain thin. Surface triangles map to original faces;
 only original geometry edges participate in edge selection. Edges hidden behind
 nearer faces are filtered using a depth tolerance. Edge picking uses an approximate
 six-pixel tolerance at camera target depth. Region editing and hide/isolate tools

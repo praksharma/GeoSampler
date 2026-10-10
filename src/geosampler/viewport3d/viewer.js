@@ -2,6 +2,9 @@
 import * as THREE from 'three';
 import {OrbitControls} from './vendor/OrbitControls.js';
 import {OrientationGizmo} from './gizmo.js';
+import {LineSegments2} from './vendor/lines/LineSegments2.js';
+import {LineSegmentsGeometry} from './vendor/lines/LineSegmentsGeometry.js';
+import {LineMaterial} from './vendor/lines/LineMaterial.js';
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(38,1,.01,10000);
 const renderer=new THREE.WebGLRenderer({antialias:true});
@@ -35,7 +38,19 @@ function orient(index){
   camera.up.set(0,index===2||index===5?0:1,index===2?-1:index===5?1:0);
   fit(new THREE.Vector3(...[[1,.7,1],[0,0,1],[0,1,0],[1,0,0],[0,0,-1],[0,-1,0],[-1,0,0]][index]));notify(index);
 }
-function recolor(){for(const object of objects){const id=key(object);object.material.color.set(selected.has(id)?0xe89a34:hover===id?0x41c4b8:object.userData.dimension===2?palette.face:palette.edge);}}
+function recolor(){
+  for(const object of objects){
+    const id=key(object),isSelected=selected.has(id),isHovered=hover===id;
+    const color=isSelected?0xe89a34:isHovered?0x41c4b8:object.userData.dimension===2?palette.face:palette.edge;
+    object.material.color.set(color);
+    const highlight=object.userData.highlight;
+    if(highlight){
+      highlight.visible=isSelected||isHovered;
+      highlight.material.color.set(color);
+      highlight.material.linewidth=isSelected?6:4;
+    }
+  }
+}
 function appearance(config){
   scene.background=new THREE.Color(config.canvas);grid.material.color.set(config.grid);
   grid.visible=config.showGrid;axes.visible=config.showAxes;
@@ -43,7 +58,7 @@ function appearance(config){
   palette={face:dark?0x6196ad:0x75a8b5,edge:dark?0xd0e4ec:0x304650};recolor();
 }
 function loadGeometry(data){
-  for(const object of objects){scene.remove(object);object.geometry.dispose();object.material.dispose();}
+  for(const object of objects){scene.remove(object);object.traverse(part=>{part.geometry?.dispose();part.material?.dispose();});}
   objects=[];faces=[];edges=[];selected.clear();hover=null;down=null;documentId=data.document;
   const box=new THREE.Box3();
   for(const entity of data.entities){
@@ -53,7 +68,15 @@ function loadGeometry(data){
       geometry.computeVertexNormals();
       object=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:palette.face,side:THREE.DoubleSide,roughness:.65,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1}));faces.push(object);
     }else{object=new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({color:palette.edge}));edges.push(object);}
-    object.userData={dimension:entity.dimension,tag:entity.tag};objects.push(object);scene.add(object);box.expandByObject(object);
+    object.userData={dimension:entity.dimension,tag:entity.tag};
+    if(entity.dimension===1){
+      // Screen-space ribbons: native WebGL lines remain one pixel on most GPUs.
+      const highlight=new LineSegments2(new LineSegmentsGeometry().setPositions(entity.positions),
+        new LineMaterial({color:0xe89a34,linewidth:6,worldUnits:false,depthTest:true,depthWrite:false}));
+      highlight.visible=false;
+      object.add(highlight);object.userData.highlight=highlight;
+    }
+    objects.push(object);scene.add(object);box.expandByObject(object);
   }
   box.getCenter(center);radius=Math.max(box.getSize(new THREE.Vector3()).length()*.6,1e-6);
   grid.position.copy(center);grid.position.z=box.min.z-radius*.005;grid.scale.setScalar(radius/8);

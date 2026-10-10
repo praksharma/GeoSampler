@@ -50,6 +50,7 @@ contains the boundary partitions; GeoSampler does not create or edit them.
 
 - [x] Add explicit face-selection and edge-selection modes.
 - [x] Add hover highlighting and click selection mapped to original entity IDs.
+- [x] Make edge hover and selection clearly visible with thick screen-space strokes.
 - [x] Support multi-selection, deselection and clearing the current selection.
 - [x] Synchronize selections between the geometry tree and viewport.
 - [x] Show entity type, ID, group membership and relevant details in Properties.

@@ -31,3 +31,7 @@ These fixtures retain their upstream licence separately from application code.
 GeoSampler uses Gmsh 4.15.2 through its Python API for `.geo` import and
 per-entity display tessellation. Gmsh is installed as a dependency; its source
 and licence information are available at https://gmsh.info/.
+
+The thick-line modules in `viewport3d/vendor/lines/` are copied unchanged from
+the official Three.js r180 `examples/jsm/lines/` directory (LineSegments2,
+LineSegmentsGeometry, LineMaterial), under the same retained MIT licence.
