@@ -15,7 +15,9 @@
 - [ ] Sampling previews, normals and geometric validation.
 - [ ] xarray/NetCDF and NPZ export; no Parquet.
 - [ ] Save/load reproducible sampling projects.
-- [ ] Example geometries, installation validation and release documentation.
+- [x] Add source-attributed 2D annulus and 3D sphere fixtures from CFDBench.
+- [ ] Validate fixtures with the future geometry importer.
+- [ ] Installation validation and release documentation.
 
 ## Later
 - [ ] Additional sampling strategies and local density refinement.

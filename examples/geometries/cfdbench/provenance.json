@@ -1,0 +1,24 @@
+{
+  "repository": "https://github.com/ricardodpcosta/CFDBench",
+  "commit": "4d8553ce5e7e6ef3eaf8373e1d565cc06301b34f",
+  "files": [
+    {
+      "file": "annulus_unstructured.geo",
+      "upstream_path": "Gmsh/repository/annulus_unstructured.geo",
+      "url": "https://github.com/ricardodpcosta/CFDBench/blob/4d8553ce5e7e6ef3eaf8373e1d565cc06301b34f/Gmsh/repository/annulus_unstructured.geo",
+      "sha256": "7fa6ac69e452b2e3ad5a99eb5ff11eb059d590cd235cf5e6df6da2b87077e623"
+    },
+    {
+      "file": "sphere_unstructured.geo",
+      "upstream_path": "Gmsh/repository/sphere_unstructured.geo",
+      "url": "https://github.com/ricardodpcosta/CFDBench/blob/4d8553ce5e7e6ef3eaf8373e1d565cc06301b34f/Gmsh/repository/sphere_unstructured.geo",
+      "sha256": "1d2a9d88465807ae09c11652beb4f86355dda30be90233c98ccf2c9c2de4965d"
+    },
+    {
+      "file": "LICENSE",
+      "upstream_path": "LICENSE",
+      "url": "https://github.com/ricardodpcosta/CFDBench/blob/4d8553ce5e7e6ef3eaf8373e1d565cc06301b34f/LICENSE",
+      "sha256": "3a6d8f0632ef9e7959bff9c09dad34e011e48ebd3f8e815d8694ce8477b6c7a3"
+    }
+  ]
+}

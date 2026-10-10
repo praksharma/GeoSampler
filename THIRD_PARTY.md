@@ -18,3 +18,10 @@ shell and bridge have been simplified for an empty geometry workspace.
 The files under src/geosampler/viewport3d/vendor are copied unchanged from
 PyniteGUI's vendored official Three.js distribution, including OrbitControls and
 ViewHelper. Their MIT licence and copyright notices are retained in vendor/LICENSE.
+
+## CFDBench geometry fixtures
+
+`examples/geometries/cfdbench/` contains two unmodified Gmsh definitions by
+Ricardo Costa. See that directory's README, provenance.json and LICENSE for
+source revision, checksums, and the upstream credit/citation requirements.
+These fixtures retain their upstream licence separately from application code.
