@@ -185,10 +185,77 @@ datasets removes all in-memory datasets. Samples are generated in a separate
 process, with cancellation; errors retain previous datasets. Geometry replacement
 clears datasets. If the source `.geo` file changes, reopen it before sampling.
 Metadata includes source SHA-256, target entities, method, seed, requested/actual
-counts, accuracy and approximation notes. Datasets are currently held in memory;
-NetCDF/NPZ export, saved configurations and normals remain future work.
+counts, accuracy and approximation notes. Export saves the current datasets;
+saved application configurations and normals remain future work.
 
 Validation covers all methods on curves, 2D and 3D interiors; reproducibility;
 unit-design properties; annulus containment and area coverage; sphere surface
 membership, face membership and area coverage; changed-source rejection; and
 GUI generation, preview clearing and cancellation.
+
+
+## Exporting samples
+
+Use **Export samples…** in Sampling, or **File → Export samples…**
+(Ctrl+Shift+S). It exports all generated datasets, including hidden point previews.
+NetCDF (`.nc`) is the default; NumPy archive (`.npz`) is the alternative.
+The controls become available after generation and are disabled while sampling.
+Cancelling the save dialog leaves datasets untouched. Writes use a temporary file
+in the destination folder and replace the destination only after a complete write;
+a failed save preserves an existing file.
+
+### Schema version 1
+
+Each label is one float64 coordinate array of shape `(N, 3)`, in `x, y, z` order.
+Different labels have independent point dimensions (`_gs_points_0`, etc.), so
+unequal point counts never produce padding or NaNs. Entity tags are int32 arrays
+with one tag per point. Coordinates retain source geometry units; the importer
+does not currently identify or convert those units. Normals are not yet generated
+or exported. Export is a data snapshot, not a saved editable application project.
+
+Common identifier labels such as `boundary`, `boundary_1`, and `interior` are
+array names in both formats. Labels containing spaces, punctuation or Unicode,
+reserved names (`xyz`, `file`, `allow_pickle`, `like`), and names starting `_gs_`
+use internal `_gs_region_N` names. Original labels are preserved in metadata.
+The `_gs_` prefix is reserved for dimensions, entity-tag arrays and metadata.
+No user label is silently lost or changed in the metadata.
+
+The xarray interface is `geosampler.export.to_xarray(batches)`. NetCDF is written
+through xarray's SciPy engine as NetCDF3 64-bit offset, using the existing SciPy
+dependency. The Dataset has only coordinate arrays as data variables; `xyz` and
+`_gs_entity_tags_N` are coordinates. Per-variable attributes include `label`,
+`method`, `seed`, `entity_dimension`, `entity_tags_coordinate`, and
+`metadata_json`. The latter preserves all generation metadata, including target
+entities, source path/SHA-256, document identity, requested/actual counts,
+accuracy and approximation notes. Global `metadata_json` contains the ordered
+label-to-array map, schema/app versions and source-unit description.
+
+```python
+import json
+import xarray as xr
+
+with xr.open_dataset('samples.nc', engine='scipy') as ds:
+    points = ds['boundary'].values  # (N, 3)
+    tags = ds['boundary'].coords[ds['boundary'].attrs['entity_tags_coordinate']].values
+    metadata = json.loads(ds['boundary'].attrs['metadata_json'])
+```
+
+NPZ uses the same coordinate array names, plus `xyz`, `_gs_entity_tags_N`, and
+`_gs_metadata` (a Unicode scalar containing JSON). It contains no Python objects
+and loads with `allow_pickle=False`. Its manifest maps each original label to
+its coordinate and entity-tag array names and retains generation metadata.
+
+```python
+import json
+import numpy as np
+
+with np.load('samples.npz', allow_pickle=False) as data:
+    points = data['boundary']  # (N, 3)
+    manifest = json.loads(data['_gs_metadata'].item())
+    by_label = {item['label']: item for item in manifest['datasets']}
+    tags = data[by_label['boundary']['entity_tags']]
+```
+
+Validation covers unequal array lengths, exact coordinate/tag round trips,
+Unicode/reserved labels, invalid data, preservation of existing files on save
+failure, and both export options from the actual sampled-face UI workflow.

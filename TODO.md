@@ -94,10 +94,11 @@ Acceptance checks:
 - [x] Reference-fixture boundary membership, coverage and interior checks.
 - [ ] Validate arbitrary CAD trimming/containment and normal orientation; add
       certified surface sampling bounds and mesh-convergence checks.
-- [ ] Primary xarray Dataset interface with NetCDF export; alternative named
+- [x] Primary xarray Dataset interface with NetCDF export; alternative named
       arrays in NPZ. No Parquet.
-- [ ] Export coordinates, region labels, applicable normals and reproducibility
-      metadata; finalize the dataset schema before implementing exports.
+- [x] Versioned export schema for coordinates, dataset labels, per-point entity
+      tags and reproducibility metadata; round-trip NetCDF and NPZ checks.
+- [ ] Add applicable normals to exports after normal generation is implemented.
 - [ ] Save/load full sampling configurations and regenerate datasets.
 - [ ] Installation validation, examples and release documentation.
 

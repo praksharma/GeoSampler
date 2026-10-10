@@ -146,7 +146,33 @@ class GeometryTest(unittest.TestCase):
                 self.wait_for(lambda: self.javascript(window, 'window.geoViewer.diagnostics().sampleCount')==256)
                 self.assertIn('Face 1',window.sample_results.text())
                 self.assertIn('Face 6',window.sample_results.text())
+                self.assertTrue(window.export_action.isEnabled())
+                self.assertTrue(window.sampling.export.isEnabled())
+                # Save the actual sampled faces through both GUI export options.
+                import xarray as xr
+                import numpy as np
+                nc_path = Path(directory)/'sphere_samples.nc'
+                with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=(str(nc_path),'NetCDF (*.nc)')):
+                    window.export_action.trigger()
+                with xr.open_dataset(nc_path, engine='scipy') as exported:
+                    self.assertEqual(set(exported.data_vars),{'boundary','boundary_1'})
+                    for batch in window.sampling.batches:
+                        np.testing.assert_array_equal(exported[batch['label']].values,batch['coordinates'])
+                npz_path = Path(directory)/'sphere_samples'
+                with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=(str(npz_path),'NumPy archive (*.npz)')):
+                    window.sampling.export.click()
+                with np.load(npz_path.with_suffix('.npz'), allow_pickle=False) as exported:
+                    self.assertEqual(exported['boundary_1'].shape,(128,3))
+                with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=('','')), patch('geosampler.export.export_samples') as exporter:
+                    window.export_samples()
+                    exporter.assert_not_called()
+                with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=(str(nc_path),'NetCDF (*.nc)')), patch('geosampler.export.export_samples',side_effect=OSError('Disk full')), patch('geosampler.app.QMessageBox.warning') as warning:
+                    window.export_samples()
+                    warning.assert_called_once()
+                self.assertEqual(len(window.sampling.batches),2)
                 window.sampling.clear_batches()
+                self.assertFalse(window.export_action.isEnabled())
+                self.assertFalse(window.sampling.export.isEnabled())
                 window.sampling.target.setCurrentIndex(1)
                 window.sampling.label.setText('interior')
                 window.sampling.resolution.setCurrentIndex(0)

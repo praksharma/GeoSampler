@@ -6,8 +6,8 @@ Geometry-aware point sampling for PINNs and scientific machine learning.
 viewport, and select original faces or edges using separate tools. Includes
 synchronized tree selection, multi-selection, imported group information,
 dockable panes and light/dark themes. Generate labelled datasets with seven
-sampling methods and preview interior or boundary coordinates. Region editing
-and file export are planned.
+sampling methods, preview interior or boundary coordinates, and export labelled
+xarray/NetCDF or NumPy NPZ arrays. Region editing is planned.
 
 ## Quick start
 
@@ -25,6 +25,8 @@ Drag to orbit, right-drag to pan, and scroll to zoom.
 Open the **Sampling** tab on the right. Choose selected faces/edges, an imported
 group, or the domain interior; set the method, count, seed, and dataset label;
 then click **Generate samples**. Multiple datasets can be previewed together.
+Use **Export samples** in the Sampling pane or File menu to save all datasets
+as NetCDF (default) or NPZ. Each label is an independent coordinate array.
 Methods: random, regular grid, LHS, Sobol, Halton, Hammersley, and stratified.
 See the guide for numerical geometry accuracy and grid-count behaviour.
 

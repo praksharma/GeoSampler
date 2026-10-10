@@ -32,6 +32,8 @@ class MainWindow(QMainWindow):
         self.view.status.connect(self.statusBar().showMessage)
         file_menu = self.menuBar().addMenu("&File")
         self.open_action = file_menu.addAction("&Open Geometry…", self.open_geometry, "Ctrl+O")
+        self.export_action = file_menu.addAction("&Export samples…", self.export_samples, "Ctrl+Shift+S")
+        self.export_action.setEnabled(False)
         file_menu.addAction("&Quit", self.close, "Ctrl+Q")
         self.view_menu = self.menuBar().addMenu("&View")
         self.toolbar = QToolBar("Viewport", self)
@@ -128,6 +130,29 @@ class MainWindow(QMainWindow):
         self.addDockWidget(area, dock)
         self.view_menu.addAction(dock.toggleViewAction())
         return dock
+
+    def export_samples(self):
+        if not self.sampling.batches or self.sampling.process:
+            return
+        directory = self.settings.value('export/directory', str(Path.home()))
+        stem = Path(self.geometry['source']).stem if self.geometry else 'geometry'
+        filename, selected_filter = QFileDialog.getSaveFileName(
+            self, 'Export samples', str(Path(directory) / f'{stem}_samples'),
+            'NetCDF (*.nc);;NumPy archive (*.npz)')
+        if not filename:
+            return
+        path = Path(filename)
+        if not path.suffix:
+            path = path.with_suffix('.npz' if 'npz' in selected_filter else '.nc')
+        try:
+            # Keep scientific data dependencies out of application startup.
+            from .export import export_samples
+            export_samples(self.sampling.batches, path)
+        except (OSError, ValueError, TypeError, KeyError, ImportError) as error:
+            QMessageBox.warning(self, 'Export failed', str(error))
+            return
+        self.settings.setValue('export/directory', str(path.parent))
+        self.statusBar().showMessage(f'Exported {len(self.sampling.batches)} datasets to {path}')
 
     def set_visibility(self, attribute, checked):
         setattr(self.view, attribute, checked)

@@ -87,6 +87,10 @@ class SamplingPanel(QWidget):
         layout.addLayout(size_row)
         self.point_size.valueChanged.connect(self.refresh_style)
         self.refresh_style()
+        self.export = QPushButton('Export samples…')
+        self.export.setEnabled(False)
+        self.export.clicked.connect(self.window.export_samples)
+        layout.addWidget(self.export)
         self.clear = QPushButton('Clear generated datasets')
         self.clear.clicked.connect(self.clear_batches)
         layout.addWidget(self.clear)
@@ -127,6 +131,8 @@ class SamplingPanel(QWidget):
         self.generate.setEnabled(not busy and self.window.geometry is not None)
         self.cancel.setEnabled(busy)
         self.window.open_action.setEnabled(not busy)
+        self.export.setEnabled(not busy and bool(self.batches))
+        self.window.export_action.setEnabled(not busy and bool(self.batches))
 
     def next_available_label(self, label):
         used = {batch['label'] for batch in self.batches}
@@ -238,4 +244,6 @@ class SamplingPanel(QWidget):
         self.window.view.set_sample_style(self.preview_style())
 
     def refresh_preview(self):
+        self.export.setEnabled(bool(self.batches) and self.process is None)
+        self.window.export_action.setEnabled(self.export.isEnabled())
         self.window.view.set_samples({'batches': self.batches, **self.preview_style()})
