@@ -113,12 +113,14 @@ renderer. The software fallback remains available for other machines.
 The right dock contains Properties and Sampling tabs. Choose a target:
 selected faces/edges (Ctrl/Shift-click for multiple entities), Domain interior,
 or an imported physical face/edge group. Point count is the total across that
-target, not a count per constituent entity. Labels are shared region metadata: you
-can sample different faces or edges with the same label (for example, `boundary`).
-Each generation adds a separate dataset and preserves earlier coordinates and
-entity tags, even when its label repeats. Results lists the generated datasets
-with their source entities. Different labels can distinguish boundary/interior
-sets or comparisons.
+target, not a count per constituent entity. Each dataset has a unique label.
+After successful generation, the label field automatically suggests the next
+available numbered name: `boundary`, `boundary_1`, `boundary_2`, and so on.
+Existing names are skipped; manually reusing a name also selects an available
+numbered variant. You can enter a different base name at any time. Failed or
+cancelled generation does not advance the suggested name. Each generation adds
+a separate dataset and preserves earlier coordinates and entity tags. Results
+lists the generated datasets with their source entities.
 
 Methods implemented:
 

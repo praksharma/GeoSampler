@@ -45,7 +45,7 @@ class SamplingPanel(QWidget):
         self.seed.setValue(42)
         form.addRow('Seed', self.seed)
         self.label = QLineEdit('boundary')
-        self.label.setToolTip('A shared label for the sampled region. Different faces or edges may use the same label; each generation keeps its own coordinates and entity tags.')
+        self.label.setToolTip('Each dataset has a unique label. After generation, the next available numbered label is filled in automatically.')
         form.addRow('Dataset label', self.label)
         self.resolution = QComboBox()
         for title, number in [('Standard', 32), ('Fine', 64)]:
@@ -128,6 +128,19 @@ class SamplingPanel(QWidget):
         self.cancel.setEnabled(busy)
         self.window.open_action.setEnabled(not busy)
 
+    def next_available_label(self, label):
+        used = {batch['label'] for batch in self.batches}
+        if label not in used:
+            return label
+        base, separator, suffix = label.rpartition('_')
+        if separator and suffix.isascii() and suffix.isdecimal():
+            number = int(suffix) + 1
+        else:
+            base, number = label, 1
+        while f'{base}_{number}' in used:
+            number += 1
+        return f'{base}_{number}'
+
     def start(self):
         if self.process or not self.window.geometry or self.window.import_process:
             return
@@ -145,6 +158,8 @@ class SamplingPanel(QWidget):
         if not label:
             QMessageBox.information(self, 'Dataset label', 'Give this dataset a label before generating points.')
             return
+        label = self.next_available_label(label)
+        self.label.setText(label)
         geometry = self.window.geometry
         request = {key: geometry[key] for key in ('source', 'source_hash', 'document')}
         request.update(target=kind, entities=entities, method=self.method.currentData(),
@@ -180,6 +195,7 @@ class SamplingPanel(QWidget):
             if batch['document'] != self.window.geometry['document']:
                 raise ValueError('The geometry changed during generation.')
             self.batches.append(batch)
+            self.label.setText(self.next_available_label(batch['label']))
             self.summary.setText(f"{batch['label']}: {batch['count']} points\n" + '\n'.join(batch['notes']))
             self.refresh_preview()
             self.window.results_dock.show()
