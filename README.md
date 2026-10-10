@@ -5,8 +5,9 @@ Geometry-aware point sampling for PINNs and scientific machine learning.
 **Current status:** import Gmsh `.geo` geometry, inspect it in the offline 3D
 viewport, and select original faces or edges using separate tools. Includes
 synchronized tree selection, multi-selection, imported group information,
-dockable panes and light/dark themes. Region editing, sampling and dataset
-export are planned.
+dockable panes and light/dark themes. Generate labelled datasets with seven
+sampling methods and preview interior or boundary coordinates. Region editing
+and file export are planned.
 
 ## Quick start
 
@@ -20,6 +21,12 @@ uv run geosampler
 Use **File → Open Geometry** (Ctrl+O), then **Select faces** (F) or
 **Select edges** (E). Ctrl/Shift-click toggles additional entities; Esc clears.
 Drag to orbit, right-drag to pan, and scroll to zoom.
+
+Open the **Sampling** tab on the right. Choose selected faces/edges, an imported
+group, or the domain interior; set the method, count, seed, and dataset label;
+then click **Generate samples**. Multiple datasets can be previewed together.
+Methods: random, regular grid, LHS, Sobol, Halton, Hammersley, and stratified.
+See the guide for numerical geometry accuracy and grid-count behaviour.
 
 Try the included fixture directly:
 

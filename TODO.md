@@ -81,10 +81,15 @@ Acceptance checks:
 
 ## 5. First end-to-end sampling release
 
-- [ ] Interior and boundary sampling with seeds and per-region point counts.
-- [ ] Sampling previews and outward normals where applicable.
-- [ ] Validate containment, boundary membership, normal orientation and sampling
-      distributions independently of display tessellation.
+- [x] Seven roadmap sampling methods with seeds and target point counts.
+- [x] Selected entities, imported groups and interior targets with labelled datasets.
+- [x] Background generation, cancellation and simultaneous point previews.
+- [ ] Saved per-region sampling configurations.
+- [x] Sampling previews.
+- [ ] Outward normals where applicable.
+- [x] Reference-fixture boundary membership, coverage and interior checks.
+- [ ] Validate arbitrary CAD trimming/containment and normal orientation; add
+      certified surface sampling bounds and mesh-convergence checks.
 - [ ] Primary xarray Dataset interface with NetCDF export; alternative named
       arrays in NPZ. No Parquet.
 - [ ] Export coordinates, region labels, applicable normals and reproducibility

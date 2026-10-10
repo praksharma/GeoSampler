@@ -12,6 +12,7 @@ from .theme import configure_theme
 from .viewport import Viewport
 from .graphics import configure_graphics
 from .window_controls import install_window_controls
+from .sampling_panel import SamplingPanel
 
 
 class MainWindow(QMainWindow):
@@ -78,9 +79,16 @@ class MainWindow(QMainWindow):
         properties.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.properties_dock = self.dock("Properties", "properties", properties, Qt.DockWidgetArea.RightDockWidgetArea)
         results = QLabel("No samples generated.")
+        self.sample_results = results
+        results.setWordWrap(True)
+        results.setTextFormat(Qt.TextFormat.PlainText)
         results.setMargin(16)
         self.results_dock = self.dock("Results", "results", results, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.results_dock.hide()
+        self.sampling = SamplingPanel(self)
+        self.sampling_dock = self.dock("Sampling", "sampling", self.sampling, Qt.DockWidgetArea.RightDockWidgetArea)
+        self.tabifyDockWidget(self.properties_dock, self.sampling_dock)
+        self.sampling_dock.raise_()
         self.view_menu.addAction(self.toolbar.toggleViewAction())
         self.view_menu.addSeparator()
         self.view_menu.addAction("Reset layout", self.reset_layout)
@@ -123,6 +131,11 @@ class MainWindow(QMainWindow):
             dock.setVisible(dock is not self.results_dock)
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.toolbar)
         self.toolbar.show()
+        self.sampling_dock.setFloating(False)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.sampling_dock)
+        self.tabifyDockWidget(self.properties_dock, self.sampling_dock)
+        self.sampling_dock.show()
+        self.sampling_dock.raise_()
         self.resizeDocks([self.geometry_dock, self.properties_dock], [240, 260], Qt.Orientation.Horizontal)
 
     def set_theme(self, name):
@@ -148,7 +161,7 @@ class MainWindow(QMainWindow):
         self.view.web.page().runJavaScript("JSON.stringify(window.geoViewer.diagnostics())", received)
 
     def about(self):
-        QMessageBox.about(self, "About GeoSampler", f"GeoSampler {__version__}\nGeometry-aware sampling for PINNs.\n\nGmsh geometry import with face and edge selection. Sampling is planned.\nAdapted from PyniteGUI; licensed under AGPL-3.0-only.\nThree.js is distributed under its MIT licence.")
+        QMessageBox.about(self, "About GeoSampler", f"GeoSampler {__version__}\nGeometry-aware sampling for PINNs.\n\nGmsh geometry import with face and edge selection. Seven sampling methods with boundary/interior previews.\nAdapted from PyniteGUI; licensed under AGPL-3.0-only.\nThree.js is distributed under its MIT licence.")
 
     def open_geometry(self):
         path, _ = QFileDialog.getOpenFileName(self, "Open geometry", "", "Gmsh geometry (*.geo)")
@@ -156,11 +169,12 @@ class MainWindow(QMainWindow):
             self.load_geometry(path)
 
     def load_geometry(self, path):
-        if self.import_process is not None:
+        if self.import_process is not None or self.sampling.process is not None:
             return
         process = QProcess(self)
         self.import_process = process
         self.open_action.setEnabled(False)
+        self.sampling.generate.setEnabled(False)
         self.statusBar().showMessage("Opening " + Path(path).name + "…")
         process.finished.connect(lambda code, status: self.import_finished(process, code))
         process.errorOccurred.connect(lambda error: self.import_failed_start(process) if error == QProcess.ProcessError.FailedToStart else None)
@@ -175,6 +189,7 @@ class MainWindow(QMainWindow):
             return
         self.import_process = None
         self.open_action.setEnabled(True)
+        self.sampling.generate.setEnabled(self.geometry is not None)
         try:
             if code:
                 raise ValueError(bytes(process.readAllStandardError()).decode(errors="replace")[-2000:] or "Geometry loader could not start.")
@@ -211,6 +226,7 @@ class MainWindow(QMainWindow):
         parent.setExpanded(True)
         self.tree.blockSignals(False)
         self.view.set_geometry(geometry)
+        self.sampling.geometry_loaded()
         self.setWindowTitle("GeoSampler — " + geometry["name"])
         self.update_selection()
         faces = sum(e["dimension"] == 2 for e in geometry["entities"])
@@ -273,6 +289,7 @@ class MainWindow(QMainWindow):
         self.properties.setText("\n".join(lines))
 
     def closeEvent(self, event):
+        self.sampling.shutdown()
         if self.import_process:
             process = self.import_process
             self.import_process = None

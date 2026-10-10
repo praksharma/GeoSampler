@@ -1,4 +1,5 @@
 """Gmsh import adapter. Run in a separate process to isolate kernel state."""
+import hashlib
 import json
 import math
 import sys
@@ -51,6 +52,7 @@ def load_geometry(filename):
                              "positions": vertices})
         return {"document": uuid4().hex, "source": str(path), "name": path.name,
                 "dimension": 3 if gmsh.model.getEntities(3) else 2,
+                "source_hash": hashlib.sha256(path.read_bytes()).hexdigest(),
                 "entities": entities, "groups": groups}
     finally:
         gmsh.finalize()

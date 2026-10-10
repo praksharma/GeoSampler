@@ -24,6 +24,7 @@ let center=new THREE.Vector3(),radius=15,down=null;
 const raycaster=new THREE.Raycaster();
 const key=o=>`${o.userData.dimension}:${o.userData.tag}`;
 let palette={face:0x75a8b5,edge:0x304650};
+let sampleObjects=[];
 function stopMotion(){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();controls.enableDamping=damping;}
 function resize(){camera.aspect=Math.max(innerWidth,1)/Math.max(innerHeight,1);camera.updateProjectionMatrix();renderer.setSize(Math.max(innerWidth,1),Math.max(innerHeight,1));}
 function fit(direction){
@@ -115,13 +116,25 @@ renderer.domElement.addEventListener('pointerup',event=>{
   const object=pickAt(event.clientX,event.clientY);
   window.geoBridge?.picked(documentId,object?.userData.dimension||0,object?.userData.tag||0,event.ctrlKey||event.metaKey||event.shiftKey);
 });
+function setSamples(config){
+  for(const object of sampleObjects){scene.remove(object);object.geometry.dispose();object.material.dispose();}
+  sampleObjects=[];
+  const colors=[0xf15a9b,0x388bef,0xb070ec,0x22b98a,0xe3b938];
+  for(const [index,batch] of config.batches.entries()){
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(batch.coordinates.flat(),3));
+    const object=new THREE.Points(geometry,new THREE.PointsMaterial({color:colors[index%colors.length],size:4,sizeAttenuation:false,depthTest:!config.through,depthWrite:false}));
+    object.visible=config.visible;object.renderOrder=2;
+    scene.add(object);sampleObjects.push(object);
+  }
+}
 function diagnostics(){
   const gl=renderer.getContext(),extension=gl.getExtension('WEBGL_debug_renderer_info');
   return {renderer:gl.getParameter(extension?extension.UNMASKED_RENDERER_WEBGL:gl.RENDERER),
     vendor:gl.getParameter(extension?extension.UNMASKED_VENDOR_WEBGL:gl.VENDOR),
-    version:gl.getParameter(gl.VERSION),lost:gl.isContextLost()};
+    version:gl.getParameter(gl.VERSION),lost:gl.isContextLost(),sampleCount:sampleObjects.reduce((n,o)=>n+o.geometry.attributes.position.count,0)};
 }
-window.geoViewer={orient,appearance,loadGeometry,setMode,setSelection,diagnostics,reset:()=>orient(0)};
+window.geoViewer={orient,appearance,loadGeometry,setMode,setSelection,setSamples,diagnostics,reset:()=>orient(0)};
 renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();window.geoReportFailure('Graphics context lost. Restart the application.');});
 addEventListener('resize',resize);resize();appearance({canvas:'#fafcfc',grid:'#e2e7e8',showGrid:true,showAxes:true});orient(0);setMode('face');
 const clock=new THREE.Clock();renderer.setAnimationLoop(()=>{gizmo.update(clock.getDelta());controls.update();renderer.clear();renderer.render(scene,camera);gizmo.render();});

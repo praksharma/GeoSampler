@@ -83,7 +83,8 @@ zooming. Ordinary edges remain thin. Surface triangles map to original faces;
 only original geometry edges participate in edge selection. Edges hidden behind
 nearer faces are filtered using a depth tolerance. Edge picking uses an approximate
 six-pixel tolerance at camera target depth. Region editing and hide/isolate tools
-are not implemented yet. No training points or volume mesh are generated.
+are not implemented yet. Sampling is available through the Sampling tab; its numerical mesh is separate
+from the display tessellation.
 
 Display tessellation follows the source geometry's surface meshing settings;
 coarse inputs may look faceted. It is not a sampling accuracy guarantee.
@@ -106,3 +107,74 @@ with the automatic NVIDIA setup, while 6.11.2 successfully reported
 `ANGLE (NVIDIA Corporation, Quadro RTX 4000/PCIe/SSE2, OpenGL ES 3.2)` through
 the actual WebGL context. Check Help → Graphics information for the observed
 renderer. The software fallback remains available for other machines.
+
+## Sampling
+
+The right dock contains Properties and Sampling tabs. Choose a target:
+selected faces/edges (Ctrl/Shift-click for multiple entities), Domain interior,
+or an imported physical face/edge group. Point count is the total across that
+target, not a count per constituent entity. Give each dataset a distinct label.
+Generate repeatedly with different labels to compare datasets or keep boundary
+and interior point sets together. Results lists the generated datasets.
+
+Methods implemented:
+
+| Method | Candidate design |
+| --- | --- |
+| Uniform random | Independent pseudorandom unit-cube coordinates |
+| Regular grid | Complete Cartesian lattices or evenly spaced curve positions |
+| LHS | SciPy Latin hypercube |
+| Sobol | Scrambled SciPy Sobol, generated in power-of-two blocks |
+| Halton | Scrambled SciPy Halton |
+| Hammersley | Finite Hammersley set with a seeded random shift |
+| Stratified | One random point per recursively partitioned equal-volume stratum |
+
+The seed reproduces the candidate design for a fixed source, method, accuracy
+and software version. Regular grid is deterministic and does not use the seed.
+Sobol is strongest at power-of-two counts; truncation, geometric transformation
+and rejection can change its balance properties. Likewise, final samples on an
+irregular domain do not necessarily retain Cartesian LHS or stratification.
+These coverage properties apply to the candidate space. See the
+[SciPy QMC documentation](https://docs.scipy.org/doc/scipy/reference/stats.qmc.html).
+
+### Geometry and accuracy
+
+Curve coordinates are evaluated on the original Gmsh curves. Numerical
+arc-length inversion distributes samples by length across the selected edges.
+Surface coordinates are evaluated on the original Gmsh surfaces, with derivative
+Jacobian weighting and rejection to account for varying area in parameter space.
+The trimmed parameter domain is represented by a separate surface tessellation;
+curved trim boundaries consequently have numerical tolerance. Planar face
+candidates are also checked using Gmsh containment, including the annulus hole.
+The Jacobian rejection envelope is estimated numerically with a safety margin;
+generation fails if a candidate exceeds it. This is not a certified global bound.
+
+3D interiors use a separate tetrahedral mesh and volume-weighted barycentric
+sampling. Curved-domain approximation depends on mesh accuracy; this is not an
+exact CAD solid containment guarantee for arbitrary concave shapes. Standard
+and Fine cap the sampling mesh size at the geometry's largest bounding-box
+extent divided by 32 and 64 respectively. This is independent of viewport
+triangles. Compare accuracy levels before using unfamiliar curved domains for
+scientific training. Surface parameter grids have regular parameter spacing,
+not necessarily constant spacing measured on the curved surface.
+
+Regular grid clips a complete grid to the target; actual counts can be lower
+than the budget. Multi-face grids divide the budget equally between faces.
+Other methods return the requested count. Curves use a length-weighted entity
+allocation; random surface and volume sampling are area/volume weighted.
+
+### Previews and generation lifecycle
+
+Each dataset uses a different preview colour. Show sample points toggles the
+preview; Show points through geometry reveals interior samples. Clear generated
+datasets removes all in-memory datasets. Samples are generated in a separate
+process, with cancellation; errors retain previous datasets. Geometry replacement
+clears datasets. If the source `.geo` file changes, reopen it before sampling.
+Metadata includes source SHA-256, target entities, method, seed, requested/actual
+counts, accuracy and approximation notes. Datasets are currently held in memory;
+NetCDF/NPZ export, saved configurations and normals remain future work.
+
+Validation covers all methods on curves, 2D and 3D interiors; reproducibility;
+unit-design properties; annulus containment and area coverage; sphere surface
+membership, face membership and area coverage; changed-source rejection; and
+GUI generation, preview clearing and cancellation.
