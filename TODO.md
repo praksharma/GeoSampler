@@ -48,7 +48,7 @@ contains the boundary partitions; GeoSampler does not create or edit them.
       not become selectable CAD edges.
 - [x] Send only serializable display data to the existing offline Three.js viewport.
 - [x] Fit the camera and scale reference aids to the geometry bounds.
-- [ ] Display face shading and optional geometry edges; support 2D and 3D cases.
+- [x] Display face shading and optional geometry edges; support 2D and 3D cases.
 - [x] Keep display tessellation separate from future sampling data and geometric
       evaluation; rendered triangles are not the authoritative curved geometry.
 
@@ -60,7 +60,7 @@ contains the boundary partitions; GeoSampler does not create or edit them.
 - [x] Support multi-selection, deselection and clearing the current selection.
 - [x] Synchronize selections between the geometry tree and viewport.
 - [x] Show entity type, ID, group membership and relevant details in Properties.
-- [ ] Support hide, isolate and show-all controls.
+- [x] Support hide, isolate and show-all controls.
 - [x] Prevent orbit drags from being interpreted as selection clicks.
 - [ ] Apply a consistent visible-entity picking policy; test edges at different
       zoom levels and faces partly obscured by other geometry.
@@ -106,21 +106,80 @@ Acceptance checks:
 - [ ] Save/load full sampling configurations and regenerate datasets.
 - [ ] Installation validation, examples and release documentation.
 
-## 6. Broader CAD import
+## 6. Broader CAD import — next priority
 
-- [ ] Add STEP (`.step`, `.stp`) via Gmsh's Open CASCADE support, followed by
-      IGES (`.iges`, `.igs`) and Open CASCADE BREP.
-- [ ] Test actual SolidWorks and Ansys geometry exports, including prepared BC
-      face partitions, units, multiple bodies and assemblies.
-- [ ] Check which names/groups survive neutral-format export; do not assume
-      analysis BC labels or CAD entity IDs transfer unchanged.
-- [ ] Evaluate direct OCP access if geometry queries or metadata requirements
-      outgrow the Gmsh adapter.
-- [ ] Keep `.geo` support through Gmsh; do not assume built-in-kernel scripts
-      can be loaded directly by OCP or losslessly converted to STEP.
+Release target: **Gmsh .geo + STEP + Open CASCADE BREP + IGES**. Only `.geo`
+is currently implemented. Prioritise topology-preserving CAD exchange, with
+original faces/edges and valid solids rather than triangle-only meshes.
 
-STL import is excluded. Native SolidWorks/Ansys project files, Parasolid and ACIS
-readers are outside the initial scope and require separate evaluation.
+Current backend is the Gmsh Python API, not PythonOCC/OCP. `.geo` scripts can use
+Gmsh's built-in kernel or Open CASCADE; do not assume every current model is OCC.
+Gmsh documents STEP/IGES import through Open CASCADE and
+[`gmsh.model.occ.importShapes`](https://gmsh.info/doc/texinfo/#gmsh_002fmodel_002focc_002fimportShapes)
+for BREP, STEP and IGES. Start there without introducing a second geometry backend.
+
+### Format order and implementation
+
+- [ ] **1. STEP (`.step`, `.stp`)**: first neutral-format implementation; retain
+      analytic/curved geometry, original topology and closed-solid definitions.
+      Evaluate AP203/AP214/AP242 fixtures; do not promise all product information
+      or face-level labels will survive every exporter/importer combination.
+- [ ] **2. Open CASCADE BREP (`.brep`)**: support OCC's native topology format;
+      document the accepted BREP dialect rather than treating all B-Rep files alike.
+- [ ] **3. IGES (`.iges`, `.igs`)**: accept surface-only and solid models;
+      disconnected/unsewn surfaces remain usable for boundary sampling, while
+      interior sampling requires a validated closed domain.
+- [ ] Share format detection and geometry loading between the display importer
+      and sampling workers, so a file can both render and generate valid samples.
+- [ ] Update file filters, CLI help, errors and documentation with actual supported
+      extensions; validate contents and handle malformed/unsupported files clearly.
+- [ ] Keep `.geo` and both Gmsh kernels working; do not require conversion to OCC
+      or assume built-in-kernel scripts can be converted losslessly to STEP.
+- [ ] Expose vertices, edges, faces, solids and adjacency consistently in the
+      backend model; keep tessellation separate from authoritative CAD geometry.
+- [ ] Detect source units and coordinate scale where available; retain original
+      units/metadata and explicitly record any requested conversion.
+- [ ] Support multiple bodies and assembly placements; distinguish disconnected
+      solids, open shells and non-manifold geometry before interior sampling.
+- [ ] Evaluate optional healing/sewing with explicit reporting of modifications,
+      tolerance and entity remapping; never silently change prepared BC partitions.
+
+### Names, metadata and region assignment
+
+- [ ] Import available CAD entity names, colours and assembly/body names separately
+      from Gmsh physical groups; expose what actually survived translation.
+- [ ] Preserve supplied boundary partitions without claiming topology preservation
+      guarantees face names, simulation BC labels or persistent numeric IDs.
+- [ ] Let users assign region labels to multiple faces/edges when CAD names are
+      absent; separate these assignments from generated dataset labels.
+- [ ] Track source hash, format and import options in saved projects and exports;
+      invalidate/remap region references explicitly after reimport or healing.
+- [ ] Evaluate direct OCP access only if Gmsh metadata/topology queries become
+      insufficient; keep the backend-independent application interface.
+
+### Validation and release checks
+
+- [ ] Add small, attributable STEP/BREP/IGES fixtures: curved solid with a hole,
+      prepared boundary patches, open surface, multiple bodies and assembly placement.
+- [ ] Verify face/edge selection, hide/isolate, names, point membership, interior
+      containment, cancellation and export round trips on every supported format.
+- [ ] Test real exports from SolidWorks and Ansys SpaceClaim first; expand the
+      interoperability matrix to NX, CATIA, Creo, Inventor, Fusion, Onshape,
+      FreeCAD and Rhino as accessible fixtures allow. Record exporter version,
+      settings and units rather than assuming every product exports every format.
+- [ ] Preserve the current model/datasets after failed imports and ensure import
+      and sampling errors identify open domains or invalid topology clearly.
+
+### Later translators and exclusions
+
+- [ ] **4. Parasolid (`.x_t`, `.x_b`)**: evaluate translator availability, licence,
+      distribution terms, cost and topology/metadata fidelity before committing
+      to direct import. STEP conversion is the initial workflow.
+- [ ] Evaluate ACIS (`.sat`, `.sab`) and Rhino `.3dm` only when demand and a suitable
+      licensed reader justify them; they are not implied by OCC exchange support.
+
+STL remains excluded. Native SolidWorks, CATIA, NX, Creo and Ansys project readers
+are outside the initial release; use the verified neutral export formats instead.
 
 ## Later
 
@@ -140,14 +199,126 @@ readers are outside the initial scope and require separate evaluation.
 
 ## Parametrisation workspace
 
+### Implemented first slice
+
 - [x] Separate workspace accessible below Sampled Areas, with four tabs.
 - [x] Single translation configuration: whole domain or selected-region augmentation.
 - [x] Explicit reversible preview from originals; preserve coordinates, visibility and colours.
 - [x] NetCDF/NPZ export with named parameter values and transformation provenance.
 - [x] Save/load lightweight setup; validate source geometry and region references.
-- [ ] Rotation and positive scaling, pivots, composition order and normal handling.
-- [ ] Cartesian/LHS/Sobol/random configuration sweeps and constraints.
-- [ ] Background, cancellable batch/export-only processing with progress and bounded memory.
-- [ ] NetCDF4/DataTree groups with incremental writes; NPZ shards and manifest.
-- [ ] CAD dimensional regeneration, stored sampling recipes and region tracking.
-- [ ] Geometry-aware consistency checks for independent region transformations.
+
+### Parameters and transformation engine
+
+- [ ] Add multiple named parameters with units, reference/default values, ranges,
+      explicit value lists or counts, and unambiguous mapping to transformations.
+- [ ] Add rotation with axis, angle units and pivot; add positive uniform and
+      non-uniform scaling with explicit origin/pivot.
+- [ ] Define transformation composition order and coordinate frame (world/local);
+      persist the order and frame and always evaluate from original coordinates.
+- [ ] Retain whole-domain transformations as the default consistent-domain mode;
+      label independent region transformations as augmentation with unverified
+      consistency until domain-aware validation is available.
+- [ ] Allow explicit parameter-to-region bindings and multiple transformations on
+      a region; define overlapping-region behaviour and shared-boundary consistency.
+- [ ] Reject non-finite values, singular transforms and non-positive scaling;
+      keep reflections out of the initial supported transform set.
+- [ ] Generate applicable boundary normals first, with orientation validation;
+      rotate/scale normals with the normalized inverse transpose, preserving
+      translation invariance. Never silently invent outward normals for open shells.
+- [ ] Document sampling-density changes after non-uniform scaling, and evaluate
+      surface/volume Jacobian weights where requested for downstream integration.
+
+### Configuration generation and constraints
+
+- [ ] Cartesian products, paired explicit configurations, seeded random, LHS and
+      Sobol designs; distinguish per-parameter value counts from total design size.
+- [ ] Generate parameter-space designs independently of spatial sampling settings;
+      record design algorithm, seed, bounds and actual parameter values.
+- [ ] Show configuration count, points per region/configuration, estimated output
+      size and memory needs before starting; avoid allocating huge Cartesian grids.
+- [ ] Implement explicit parameter constraints and model validity checks; report
+      rejected configurations and reasons without silently changing their values.
+- [ ] Record effects of filtering on LHS/Sobol coverage; define rejection/replacement
+      behaviour reproducibly and keep configuration identifiers stable.
+- [ ] Support configuration table/filter/selection and preview exactly one chosen
+      configuration without generating or rendering the entire sweep.
+
+### Preview and execution
+
+- [ ] Extend reversible preview to rotation/scaling and regenerated geometry;
+      keep original CAD, datasets, region assignments and visibility intact.
+- [ ] Keep parameter edits lightweight: mark stale previews/results and require
+      explicit Preview or Process configurations; never auto-run complete sweeps.
+- [ ] Three modes: Preview one configuration; Batch process all configurations
+      without changing the viewport; Export-only stream results to disk.
+- [ ] Background workers with bounded queues/chunks and configurable concurrency;
+      avoid keeping all clouds in RAM or multiplying memory across workers.
+- [ ] Progress bar, elapsed time, completed/total counts, warnings/failures and Cancel.
+- [ ] Define fail-fast versus continue-on-error behaviour, partial-output marking,
+      cleanup, cancellation checkpoints and optional resume/retry of a manifest.
+- [ ] Retain separate methods, seeds, point counts and geometry accuracy for each
+      region; include unchanged regions where needed for consistent domain datasets.
+- [ ] Geometry-aware membership checks against the intended transformed/regenerated
+      domain; clearly distinguish outside points, invalid geometry and unverified
+      checks. Moving just a wall must not imply the interior remains valid.
+
+### CAD dimensional regeneration — later stage
+
+- [ ] Store sampling recipes independently of generated output: entity/region
+      references, target, method, count, seed, accuracy and compute settings.
+- [ ] Define an explicit CAD parameter source (e.g. supported `.geo` variables or
+      a geometry-generation adapter); imported STEP/BREP need not contain editable
+      design history or named dimensions.
+- [ ] Regenerate models for radius, width, length and thickness changes and rerun
+      recipes for every valid configuration; keep this separate from point mapping.
+- [ ] Track entities/regions across regeneration and topology changes; reject
+      missing, split, merged or ambiguous boundaries until explicitly remapped.
+- [ ] Validate regenerated closed domains, holes and material regions, then
+      recompute interior points and applicable normals rather than moving only
+      boundary points for a dimension change.
+- [ ] Cache reusable preparation keyed by source/configuration/recipe and preserve
+      deterministic configuration ordering and provenance across worker counts.
+
+### Parametric exports and persistence
+
+- [ ] Version the parametric schema independently of ordinary dataset exports.
+- [ ] NetCDF4 backend and xarray DataTree: shared parameter values indexed by
+      configuration, one group per region with coordinates `(configuration, point,
+      xyz)`, entity tags, applicable normals and complete recipe/transform metadata.
+- [ ] Use stable safe group/key identifiers plus an original-label map; arbitrary
+      labels, slashes and reserved names must round-trip without collisions.
+- [ ] Write parameter values once; expose `(x,y,z,mu...)` training-array construction
+      without requiring repeated parameter columns in persistent storage.
+- [ ] Incremental/chunked disk writes, compression and configurable precision;
+      do not assume xarray append mode automatically extends configuration arrays.
+- [ ] Handle varying point counts explicitly through ragged representations or
+      separate configuration groups; never silently pad, truncate or duplicate points.
+- [ ] NPZ configuration shards plus manifest for large runs; document filenames,
+      safe keys, loading without pickle and reconstruction of region/parameter data.
+- [ ] Preserve source hashes, units, original recipes, algorithms/seeds, parameter
+      configurations, transform order/pivots, warnings and completed/failed status.
+- [ ] Keep final outputs atomic or clearly mark incomplete streaming runs; preserve
+      existing destinations on failure and define safe resume behaviour.
+- [ ] Extend setup JSON to multiple parameters, designs, constraints, bindings and
+      recipes; version/migrate it independently of generated output.
+- [ ] Full project persistence for geometry references, regions, recipes and setup;
+      detect changed sources and stale outputs. Keep point-cloud storage optional.
+- [ ] Retain unsaved setup changes when reopening the workspace; support clear
+      new/reset setup and document behaviour after region rename/delete or reimport.
+
+### Acceptance checks
+
+- [ ] Rotation/pivot and transform-order cases; inverse-transpose normals under
+      non-uniform scaling; zero-motion and identity configurations.
+- [ ] Repeated preview, scope changes, Restore, Close and Escape never accumulate
+      transforms or overwrite original geometry, samples or region visibility.
+- [ ] Whole-domain boundary/interior consistency and explicit warnings for unsafe
+      independent region changes; invalid/missing constraints and source changes.
+- [ ] Reproducible Cartesian/LHS/Sobol/random configurations and stable provenance;
+      verify coverage limitations after constraint filtering.
+- [ ] Unequal region counts and varying configuration counts round-trip through
+      DataTree/NetCDF4 and NPZ shards with labels, parameters, tags and normals.
+- [ ] Cancellation, partial failures, disk-full, resume/retry, changed setup versions
+      and multi-million-point runs with bounded memory and responsive UI.
+- [ ] End-to-end PINN example loading parameter-conditioned coordinates and separate
+      boundary/interior datasets, plus regeneration with topology-change rejection.
