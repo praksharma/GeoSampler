@@ -25,3 +25,9 @@ ViewHelper. Their MIT licence and copyright notices are retained in vendor/LICEN
 Ricardo Costa. See that directory's README, provenance.json and LICENSE for
 source revision, checksums, and the upstream credit/citation requirements.
 These fixtures retain their upstream licence separately from application code.
+
+## Gmsh runtime dependency
+
+GeoSampler uses Gmsh 4.15.2 through its Python API for `.geo` import and
+per-entity display tessellation. Gmsh is installed as a dependency; its source
+and licence information are available at https://gmsh.info/.

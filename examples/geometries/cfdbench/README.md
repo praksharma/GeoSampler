@@ -30,8 +30,8 @@ Full results: entity-check.json. Reproduce from the repository root:
 uv run --with gmsh==4.15.2 python scripts/check_geo_entities.py
 ```
 
-GeoSampler's current shell still has no importer or mouse-picking interface.
-When implementing it, preserve `(dimension, tag)` for every rendered entity:
+GeoSampler now imports these files through File → Open Geometry and supports
+separate face and edge selection tools. The renderer preserves `(dimension, tag)`:
 triangle hits map to faces, line-segment hits map to edges. Physical groups
 combine entities without removing their individual identities. Tags identify
 entities in the loaded model; do not assume they survive arbitrary CAD edits.

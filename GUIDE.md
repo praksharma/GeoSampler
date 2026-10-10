@@ -5,7 +5,7 @@
 Drag with the left mouse button to orbit; right-drag to pan; scroll to zoom.
 Use the camera selector or the bottom-right orientation gizmo for standard views.
 The reference grid is in the XY plane. Grid and axes can be hidden independently.
-Reset view returns to the default isometric camera; it does not fit imported CAD yet.
+Reset view returns to the default isometric camera; it fits the loaded geometry.
 
 Left: Geometry and Regions. Right: Properties. Bottom: optional Results pane.
 Use View to show/hide panes; drag their titles to rearrange or detach them.
@@ -13,6 +13,11 @@ View → Reset layout restores the initial layout. Window geometry, panel layout
 and theme persist between launches. The Results pane starts hidden on first launch.
 
 ## Architecture
+
+`geometry.py` runs Gmsh in a separate process, returning entity identities,
+physical groups and per-entity display tessellation. Only `.geo` input is
+currently enabled. Geometry is retained in the source file; display triangles
+are not a substitute for exact geometry in future sampling.
 
 `src/geosampler/app.py` owns the Qt window, menus, docks and settings.
 `viewport.py` embeds Qt WebEngine and exposes a small QWebChannel bridge.
@@ -57,3 +62,31 @@ settings passed on Wayland using software rendering. The initial window was
 visually inspected. Source and wheel distributions built successfully. This host
 emits graphics-driver warnings; its offscreen and X11 paths were not usable.
 Interactive mouse gestures and other operating systems still need manual checks.
+
+## Geometry import and selection
+
+Open a `.geo` file with File → Open Geometry, or pass its path on the command
+line. Import runs outside the UI process; a failed import retains the previous
+model. Closing the window stops an active import. File replacement clears old
+selections. Face and edge IDs are scoped to the loaded document.
+
+Select faces (F) uses a crosshair cursor; Select edges (E) uses a cell cursor.
+Switching modes clears selection. Click selects one entity; Ctrl/Shift-click
+toggles additional entities; clicking empty space or Esc clears selection.
+Dragging orbits without selecting. The geometry tree can also select entities
+and automatically switches to their face/edge mode. Properties shows IDs,
+geometry types and imported physical group IDs. Imported groups are read-only.
+
+Hover is teal; selection is orange. Surface triangles map to original faces;
+only original geometry edges participate in edge selection. Edges hidden behind
+nearer faces are filtered using a depth tolerance. Edge picking uses an approximate
+six-pixel tolerance at camera target depth. Region editing and hide/isolate tools
+are not implemented yet. No training points or volume mesh are generated.
+
+Display tessellation follows the source geometry's surface meshing settings;
+coarse inputs may look faceted. It is not a sampling accuracy guarantee.
+
+Validation includes asynchronous import of both reference files, face clicks,
+annulus hole rejection, edge clicks and multi-selection, tree synchronization,
+file replacement, import failure preservation, and drag suppression. The real
+Qt WebEngine renderer and QWebChannel bridge are exercised on Wayland.

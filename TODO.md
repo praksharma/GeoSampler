@@ -23,38 +23,38 @@ contains the boundary partitions; GeoSampler does not create or edit them.
 
 ## 1. Geometry import
 
-- [ ] Add and lock the Gmsh dependency; verify installation on the development host.
-- [ ] Define a backend-neutral geometry model: source file, dimension, entities,
+- [x] Add and lock the Gmsh dependency; verify installation on the development host.
+- [x] Define a backend-neutral geometry model: source file, dimension, entities,
       entity identifiers, adjacency, existing groups and bounds.
-- [ ] Implement a Gmsh adapter that opens `.geo` files and extracts that model.
-- [ ] Retain `(dimension, tag)` identities within each loaded Gmsh model; scope
+- [x] Implement a Gmsh adapter that opens `.geo` files and extracts that model.
+- [x] Retain `(dimension, tag)` identities within each loaded Gmsh model; scope
       selections to the current document and clear them on replacement.
-- [ ] Preserve upstream physical groups and names when present; unnamed entities
+- [x] Preserve upstream physical groups and names when present; unnamed entities
       remain valid. Do not interpret group names as physical BC values.
-- [ ] Add File → Open Geometry and show the loaded geometry in the left pane.
-- [ ] Handle loading errors without losing the previously opened geometry.
-- [ ] Keep loading responsive and manage Gmsh initialization/cleanup explicitly.
+- [x] Add File → Open Geometry and show the loaded geometry in the left pane.
+- [x] Handle loading errors without losing the previously opened geometry.
+- [x] Keep loading responsive and manage Gmsh initialization/cleanup explicitly.
 
 ## 2. Display geometry with original entity identities
 
-- [ ] Generate display triangles per face and line segments per original edge.
-- [ ] Map every display primitive to its source entity. Triangulation edges must
+- [x] Generate display triangles per face and line segments per original edge.
+- [x] Map every display primitive to its source entity. Triangulation edges must
       not become selectable CAD edges.
-- [ ] Send only serializable display data to the existing offline Three.js viewport.
-- [ ] Fit the camera and scale reference aids to the geometry bounds.
+- [x] Send only serializable display data to the existing offline Three.js viewport.
+- [x] Fit the camera and scale reference aids to the geometry bounds.
 - [ ] Display face shading and optional geometry edges; support 2D and 3D cases.
-- [ ] Keep display tessellation separate from future sampling data and geometric
+- [x] Keep display tessellation separate from future sampling data and geometric
       evaluation; rendered triangles are not the authoritative curved geometry.
 
 ## 3. Face and edge selection — first usable milestone
 
-- [ ] Add explicit face-selection and edge-selection modes.
-- [ ] Add hover highlighting and click selection mapped to original entity IDs.
-- [ ] Support multi-selection, deselection and clearing the current selection.
-- [ ] Synchronize selections between the geometry tree and viewport.
-- [ ] Show entity type, ID, group membership and relevant details in Properties.
+- [x] Add explicit face-selection and edge-selection modes.
+- [x] Add hover highlighting and click selection mapped to original entity IDs.
+- [x] Support multi-selection, deselection and clearing the current selection.
+- [x] Synchronize selections between the geometry tree and viewport.
+- [x] Show entity type, ID, group membership and relevant details in Properties.
 - [ ] Support hide, isolate and show-all controls.
-- [ ] Prevent orbit drags from being interpreted as selection clicks.
+- [x] Prevent orbit drags from being interpreted as selection clicks.
 - [ ] Apply a consistent visible-entity picking policy; test edges at different
       zoom levels and faces partly obscured by other geometry.
 

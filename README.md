@@ -2,10 +2,11 @@
 
 Geometry-aware point sampling for PINNs and scientific machine learning.
 
-**Current status:** desktop foundation with an offline 3D viewport, dockable
-Geometry/Regions and Properties panes, an optional Results pane, camera controls,
-and light/dark themes. CAD import, boundary labelling, sampling, and dataset export
-are planned; they are not implemented yet.
+**Current status:** import Gmsh `.geo` geometry, inspect it in the offline 3D
+viewport, and select original faces or edges using separate tools. Includes
+synchronized tree selection, multi-selection, imported group information,
+dockable panes and light/dark themes. Region editing, sampling and dataset
+export are planned.
 
 ## Quick start
 
@@ -14,6 +15,16 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 ```sh
 uv sync
 uv run geosampler
+```
+
+Use **File → Open Geometry** (Ctrl+O), then **Select faces** (F) or
+**Select edges** (E). Ctrl/Shift-click toggles additional entities; Esc clears.
+Drag to orbit, right-drag to pan, and scroll to zoom.
+
+Try the included fixture directly:
+
+```sh
+uv run geosampler examples/geometries/cfdbench/sphere_unstructured.geo
 ```
 
 For graphics compatibility, try `uv run geosampler --software-rendering`.

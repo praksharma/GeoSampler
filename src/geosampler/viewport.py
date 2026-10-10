@@ -19,7 +19,13 @@ class Bridge(QObject):
         self.view.is_ready = True
         self.view.startup_timer.stop()
         self.view.apply_theme()
-        self.view.status.emit("Ready | Empty geometry workspace")
+        self.view.flush_geometry()
+        self.view.status.emit("Ready" if self.view.geometry else "Ready | Empty geometry workspace")
+
+    @Slot(str, int, int, bool)
+    def picked(self, document, dimension, tag, extend):
+        if self.view.geometry and document == self.view.geometry["document"]:
+            self.view.picked.emit(dimension, tag, extend)
 
     @Slot(str)
     def failed(self, message):
@@ -33,10 +39,14 @@ class Bridge(QObject):
 class Viewport(QWidget):
     status = Signal(str)
     oriented = Signal(int)
+    picked = Signal(int, int, bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.is_ready = False
+        self.geometry = None
+        self.selection = []
+        self.mode = "face"
         self.show_grid = self.show_axes = True
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -76,3 +86,22 @@ class Viewport(QWidget):
     def apply_theme(self):
         self.call("appearance", {**{k: colors()[k] for k in ("canvas", "grid")},
                                  "showGrid": self.show_grid, "showAxes": self.show_axes})
+
+    def set_geometry(self, geometry):
+        self.geometry = geometry
+        self.selection = []
+        self.flush_geometry()
+
+    def flush_geometry(self):
+        if self.geometry:
+            self.call("loadGeometry", self.geometry)
+        self.call("setMode", self.mode)
+        self.call("setSelection", self.selection)
+
+    def set_mode(self, mode):
+        self.mode = mode
+        self.call("setMode", mode)
+
+    def set_selection(self, selection):
+        self.selection = selection
+        self.call("setSelection", selection)
