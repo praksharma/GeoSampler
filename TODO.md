@@ -91,7 +91,7 @@ Acceptance checks:
 - [x] Selected entities, imported groups and interior targets with labelled datasets.
 - [x] Automatically numbered unique dataset labels, retaining each dataset’s entity associations.
 - [x] Background generation, cancellation and simultaneous point previews.
-- [ ] Saved per-region sampling configurations.
+- [x] Save per-region recipes in projects and edit/regenerate existing areas.
 - [x] Sampling previews.
 - [x] Live point-size slider, outlined high-contrast markers and scrollable sampling controls.
 - [ ] Outward normals where applicable.
@@ -103,7 +103,7 @@ Acceptance checks:
 - [x] Versioned export schema for coordinates, dataset labels, per-point entity
       tags and reproducibility metadata; round-trip NetCDF and NPZ checks.
 - [ ] Add applicable normals to exports after normal generation is implemented.
-- [ ] Save/load full sampling configurations and regenerate datasets.
+- [x] Save/load full sampling configurations and regenerate datasets.
 - [ ] Installation validation, examples and release documentation.
 
 ## 6. Broader CAD import — next priority
@@ -307,10 +307,12 @@ are outside the initial release; use the verified neutral export formats instead
       existing destinations on failure and define safe resume behaviour.
 - [ ] Extend setup JSON to multiple parameters, designs, constraints, bindings and
       recipes; version/migrate it independently of generated output.
-- [ ] Full project persistence for geometry references, regions, recipes and setup;
-      detect changed sources and stale outputs. Keep point-cloud storage optional.
-- [ ] Retain unsaved setup changes when reopening the workspace; support clear
-      new/reset setup and document behaviour after region rename/delete or reimport.
+- [x] Full project persistence for geometry, regions, recipes, generated points and
+      translation setup; embed the main CAD source and validate source hashes.
+- [ ] Optional point-cloud omission and full `.geo` dependency bundling/checksums.
+- [x] Retain setup changes when reopening the workspace and include them in projects;
+      remap region renames and clear bindings when datasets/model are cleared.
+- [ ] Explicit new/reset parametrisation setup action.
 
 ### Acceptance checks
 
@@ -328,3 +330,14 @@ are outside the initial release; use the verified neutral export formats instead
       and multi-million-point runs with bounded memory and responsive UI.
 - [ ] End-to-end PINN example loading parameter-conditioned coordinates and separate
       boundary/interior datasets, plus regeneration with topology-change rejection.
+
+## Project persistence and sampled-area editing
+
+- [x] File menu save/open/save-as `.gsproj` archives with CAD and numeric arrays.
+- [x] Restore cached topology and samples without regeneration, including moved sources.
+- [x] Preserve recipes, colours, visibility, selection, camera, layout and translation setup.
+- [x] Right-click Edit: label, target entities, method, count, seed, accuracy and CPU settings.
+- [x] Replace edited area only after success; preserve originals on cancellation/failure.
+- [x] Versioned validation, checksums, no pickle, atomic writes and failed-load preservation.
+- [ ] Background project I/O and measured large-project memory/performance checks.
+- [ ] Autosave/recovery and unsaved-change prompts before destructive workspace replacement.

@@ -16,13 +16,17 @@ from .sampling_panel import SamplingPanel
 from .sampled_areas import SampledAreasTree, area_details
 from .icons import tool_icon
 from .cad_import import FILE_FILTER
+from .project_ui import ProjectActions
 
 
-class MainWindow(QMainWindow):
+class MainWindow(ProjectActions, QMainWindow):
     def __init__(self, settings=None):
         super().__init__()
         self.settings = settings if settings is not None else QSettings("GeoSampler", "GeoSampler")
         self.geometry = None
+        self.project_path = None
+        self.project_cache = None
+        self.parametrisation_setup = None
         self.import_process = None
         self.selection = set()
         self.selected_area = None
@@ -37,7 +41,11 @@ class MainWindow(QMainWindow):
         self.view.status.connect(self.statusBar().showMessage)
         file_menu = self.menuBar().addMenu("&File")
         self.open_action = file_menu.addAction("&Open Geometry…", self.open_geometry, "Ctrl+O")
-        self.export_action = file_menu.addAction("&Export samples…", self.export_samples, "Ctrl+Shift+S")
+        self.open_project_action = file_menu.addAction('Open project…', self.open_project, 'Ctrl+Shift+O')
+        self.save_project_action = file_menu.addAction('Save project', self.save_project, 'Ctrl+S')
+        self.save_project_as_action = file_menu.addAction('Save project as…', lambda: self.save_project(True), 'Ctrl+Shift+S')
+        file_menu.addSeparator()
+        self.export_action = file_menu.addAction("&Export samples…", self.export_samples, "Ctrl+Alt+E")
         self.export_action.setEnabled(False)
         file_menu.addAction("&Quit", self.close, "Ctrl+Q")
         self.view_menu = self.menuBar().addMenu("&View")
@@ -170,6 +178,7 @@ class MainWindow(QMainWindow):
         if self.settings.contains("layout"):
             self.restoreState(self.settings.value("layout"))
         self.refresh_icons()
+        self.refresh_project_actions()
 
     def open_parametrisation(self):
         if self.sampling.process or self.import_process:
@@ -193,15 +202,19 @@ class MainWindow(QMainWindow):
         self.export_action.setEnabled(False)
         self.parametrisation_dialog.finished.connect(self.finish_parametrisation)
         self.parametrisation_dialog.show()
+        self.refresh_project_actions()
 
     def finish_parametrisation(self):
         dialog = self.parametrisation_dialog
         self.parametrisation_dialog = None
+        if dialog is not None:
+            self.parametrisation_setup = dialog.setup()
         self.sampling.setEnabled(True)
         self.tree.setEnabled(True)
         self.sampled_areas.setEnabled(True)
         self.open_action.setEnabled(True)
         self.export_action.setEnabled(bool(self.sampling.batches))
+        self.refresh_project_actions()
         if dialog is not None:
             dialog.deleteLater()
 
@@ -335,6 +348,7 @@ class MainWindow(QMainWindow):
         area, status = self.sampled_areas.areas[label]
         menu.addAction('Rename…', lambda: self.rename_area(label)).setEnabled(not self.sampling.process)
         menu.addAction('Change colour…', lambda: self.change_area_colour(label)).setEnabled(status == 'Generated')
+        menu.addAction('Edit…', lambda: self.edit_area(label)).setEnabled(not self.sampling.process and not self.parametrisation_dialog)
         menu.addSeparator()
         visible = menu.addAction('Show points')
         visible.setCheckable(True)
@@ -358,6 +372,14 @@ class MainWindow(QMainWindow):
             if self.sampled_areas.areas[label][1] == 'Generated':
                 item.setCheckState(0, Qt.CheckState.Checked)
 
+    def edit_area(self, label):
+        if self.project_busy():
+            return
+        from .area_editor import AreaEditor
+        dialog = AreaEditor(self,label)
+        dialog.exec()
+        dialog.deleteLater()
+
     def rename_area(self, label):
         if self.sampling.process:
             return
@@ -371,6 +393,7 @@ class MainWindow(QMainWindow):
         if name == label:
             return
         self.sampled_areas.rename_area(label, name)
+        self.remap_parameter_label(label, name)
         if self.selected_area == label:
             self.selected_area = name
             self.show_sampled_area(name)
@@ -480,6 +503,7 @@ class MainWindow(QMainWindow):
             return
         process = QProcess(self)
         self.import_process = process
+        self.refresh_project_actions()
         self.open_action.setEnabled(False)
         self.sampling.generate.setEnabled(False)
         self.statusBar().showMessage("Opening " + Path(path).name + "…")
@@ -495,6 +519,7 @@ class MainWindow(QMainWindow):
         if self.import_process is not process:
             return
         self.import_process = None
+        self.refresh_project_actions()
         self.open_action.setEnabled(True)
         self.sampling.generate.setEnabled(self.geometry is not None)
         try:
@@ -510,6 +535,11 @@ class MainWindow(QMainWindow):
 
     def show_geometry(self, geometry):
         self.geometry = geometry
+        self.refresh_project_actions()
+        self.project_path = None
+        self.parametrisation_setup = None
+        self.view.translation_preview = None
+        self.view.camera_state = None
         self.selection.clear()
         self.items.clear()
         self.tree.blockSignals(True)
@@ -613,6 +643,9 @@ class MainWindow(QMainWindow):
             process.kill()
             process.waitForFinished(2000)
 
+        if self.project_cache is not None:
+            self.project_cache.cleanup()
+            self.project_cache = None
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("layout", self.saveState())
         super().closeEvent(event)

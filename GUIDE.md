@@ -16,7 +16,7 @@ available. Properties text can be selected and copied. There is no bottom Result
 pane; older saved layouts do not recreate it.
 Use View to show/hide panes; drag their titles to rearrange or detach them.
 View → Reset layout restores the initial layout. Window geometry, panel layout,
-and theme persist between launches. Sampled datasets are held in memory until exported.
+and theme persist between launches. Use File → Save project to preserve CAD, sampled datasets and workspace settings.
 
 ## Architecture
 
@@ -199,7 +199,7 @@ GUI generation, preview clearing and cancellation.
 ## Exporting samples
 
 Use **Export samples…** in Sampling, or **File → Export samples…**
-(Ctrl+Shift+S). It exports all generated datasets, including hidden point previews.
+(Ctrl+Alt+E). It exports all generated datasets, including hidden point previews.
 NetCDF (`.nc`) is the default; NumPy archive (`.npz`) is the alternative.
 The controls become available after generation and are disabled while sampling.
 Cancelling the save dialog leaves datasets untouched. Writes use a temporary file
@@ -382,8 +382,7 @@ clouds; defaults use warm white, cyan, lime, lavender and white. Changes take ef
 immediately. Renaming requires a non-empty, unique label and is disabled during
 generation. Hidden/isolation state and coordinates survive renaming. Exports use
 the new labels and include each region's colour in its metadata. Canceling either
-dialog leaves the region unchanged. These display choices last for the current
-session; saved project/session loading remains future work.
+dialog leaves the region unchanged. These display choices are included when saving a project.
 
 ### Parametrisation: first translation slice
 
@@ -418,7 +417,7 @@ Save/load a lightweight JSON setup containing translation, scope, region labels
 and source geometry hash. It contains no generated coordinates. Loading rejects
 a different model or missing selected-region labels, and never processes samples
 automatically. Regenerate the original datasets before reusing a saved setup.
-Setup save/load is separate from full project persistence.
+Setup save/load is also available separately; full projects preserve the current setup.
 
 Next stages: rotation and positive scaling with pivots and explicit composition
 order; Cartesian/LHS/Sobol/random parameter sweeps; cancellable processing and
@@ -454,3 +453,49 @@ STEP/BREP/IGES support is validated on these small fixtures; industrial CAD,
 assemblies, additional STEP application protocols, units, healing and stable
 cross-import region identifiers still require broader testing. No STL, Parasolid,
 ACIS or proprietary native CAD importer is added.
+
+### Save and reopen projects
+
+Use **File → Save project** (`Ctrl+S`) or **Save project as…** (`Ctrl+Shift+S`)
+to write a `.gsproj` archive. **Open project…** (`Ctrl+Shift+O`) restores it;
+**Open Geometry** remains `Ctrl+O`. Dataset export is now `Ctrl+Alt+E`.
+Saving/opening is unavailable during import, generation or an active parametrisation
+workspace; close that workspace first to keep transient previews out of projects.
+
+Projects contain the main CAD source, cached display topology, original generated
+coordinates and entity tags, generated/failed region records, sampling recipes,
+colours, per-region/global visibility, individual face filters, CAD selection,
+point appearance, camera, dock layout and the current translation setup. Geometry
+and coordinate arrays use compressed numeric storage rather than large JSON lists
+on disk, and load without pickle. Opening restores cached samples and display
+without CAD execution, remeshing or regeneration. Writes use atomic replacement;
+invalid versions, checksums or content are rejected before replacing the workspace.
+Save explicitly after editing; changes are not autosaved.
+
+The project uses the original CAD path if it still matches the saved hash.
+Otherwise it restores the embedded source into an application-managed temporary
+folder for subsequent sampling, and keeps it alive until the project is replaced
+or the application closes. Loading the project again does not require that folder
+to survive. Source geometry changes are not silently applied to saved entity IDs.
+The archive embeds only the main source: `.geo` files using external Include/Merge
+files still need those dependencies for regeneration. Their saved display and
+samples can be inspected/exported without the dependencies. Packaging and hashing
+complete `.geo` dependency graphs remains future work.
+
+### Edit a sampled area
+
+Right-click a Sampled Areas label or its details and choose **Edit…**. Change its
+label, face/edge/interior target, constituent entities, sampling method, point/grid
+budget, seed, accuracy or CPU settings, then click **Regenerate area**. Face/edge
+lists support independent checkboxes; switching target types does not force edits
+to the current viewport selection. Existing imported-group recipes can be edited
+as an explicit set of their constituent faces or edges.
+
+The replacement runs in the normal background worker. Existing points remain
+visible/exportable in memory until successful completion. Success replaces one
+area, preserving colour, visibility and region isolation, and updates any current
+translation-setup label binding. Canceling the editor does nothing; generation
+cancellation/failure retains the original recipe, label and samples. A failed or
+canceled area with no existing points can also be edited and generated. Use the
+existing Rename… and Change colour… actions for display-only changes without
+regeneration. Saving/opening projects while a replacement is running is blocked.

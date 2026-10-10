@@ -176,13 +176,19 @@ function setSamples(config){
   setSampleStyle({size:config.size??7,visible:config.visible,through:config.through,hiddenLabels:config.hiddenLabels??[],isolatedLabel:config.isolatedLabel??null,colours:config.colours??{}});
   applyTranslationPreview();
 }
+function cameraState(){return {position:camera.position.toArray(),target:controls.target.toArray(),up:camera.up.toArray(),near:camera.near,far:camera.far};}
+function setCameraState(state){
+  stopMotion();camera.position.fromArray(state.position);camera.up.fromArray(state.up);
+  controls.target.fromArray(state.target);camera.near=state.near;camera.far=state.far;
+  camera.updateProjectionMatrix();controls.update();notify(7);
+}
 function diagnostics(){
   const gl=renderer.getContext(),extension=gl.getExtension('WEBGL_debug_renderer_info');
   return {renderer:gl.getParameter(extension?extension.UNMASKED_RENDERER_WEBGL:gl.RENDERER),
     vendor:gl.getParameter(extension?extension.UNMASKED_VENDOR_WEBGL:gl.VENDOR),
     version:gl.getParameter(gl.VERSION),lost:gl.isContextLost(),visibleFaces:faces.filter(o=>o.visible).length,visibleEdges:edges.filter(o=>o.visible).length,sampleColours:Object.fromEntries(sampleObjects.map(o=>[o.userData.label,`#${o.material.color.getHexString()}`])),preview:translationPreview,sampleOffsets:Object.fromEntries(sampleObjects.map(o=>[o.userData.label,o.position.toArray()])),geometryOffset:previewOffset.toArray(),selectionCount:selected.size,pointSize:sampleStyle.size,sampleVisible:sampleStyle.visible,visibleSampleCount:sampleObjects.reduce((n,o)=>n+(o.visible?o.geometry.attributes.position.count:0),0),sampleCount:sampleObjects.reduce((n,o)=>n+o.geometry.attributes.position.count,0)};
 }
-window.geoViewer={setTranslationPreview,orient,appearance,loadGeometry,setMode,setSelection,setGeometryVisibility,setSamples,setSampleStyle,diagnostics,reset:()=>orient(0)};
+window.geoViewer={cameraState,setCameraState,setTranslationPreview,orient,appearance,loadGeometry,setMode,setSelection,setGeometryVisibility,setSamples,setSampleStyle,diagnostics,reset:()=>orient(0)};
 renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();window.geoReportFailure('Graphics context lost. Restart the application.');});
 addEventListener('resize',resize);resize();appearance({canvas:'#fafcfc',grid:'#e2e7e8',showGrid:false,showAxes:true});orient(0);setMode('face');
 const clock=new THREE.Clock();renderer.setAnimationLoop(()=>{gizmo.update(clock.getDelta());controls.update();renderer.clear();renderer.render(scene,camera);gizmo.render();});

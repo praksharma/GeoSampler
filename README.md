@@ -28,7 +28,8 @@ Open the **Sampling** tab on the right. Choose selected faces/edges, an imported
 group, or the domain interior; set the method, count, seed, and dataset label;
 then click **Generate samples**. The **Sampled Areas** tree lists each dataset
 and its details; check or uncheck labels to show or hide their points.
-Right-click faces for visibility controls, or sampled areas to rename and recolour them.
+Right-click faces for visibility controls, or sampled areas to edit, rename and recolour them.
+Use **File → Save project** (`Ctrl+S`) and **Open project…** to resume your work.
 Use **Export samples** in the Sampling pane or File menu to save all datasets
 as NetCDF (default) or NPZ. Each label is an independent coordinate array.
 Use **Parametrisation…** below Sampled Areas to preview/export a translation

@@ -145,14 +145,16 @@ class SamplingPanel(QWidget):
         for control in (self.target, self.method, self.count, self.seed, self.label, self.resolution, self.compute_mode, self.cpu_threads):
             control.setEnabled(not busy)
         self.update_compute_mode()
+        self.clear.setEnabled(not busy)
         self.generate.setEnabled(not busy and self.window.geometry is not None)
         self.cancel.setEnabled(busy)
         self.window.open_action.setEnabled(not busy)
         self.export.setEnabled(not busy and bool(self.batches))
         self.window.export_action.setEnabled(not busy and bool(self.batches))
+        self.window.refresh_project_actions()
 
     def next_available_label(self, label):
-        used = {batch['label'] for batch in self.batches}
+        used = set(self.window.sampled_areas.areas)
         if label not in used:
             return label
         base, separator, suffix = label.rpartition('_')
@@ -189,11 +191,18 @@ class SamplingPanel(QWidget):
                        count=self.count.value(), seed=self.seed.value(), label=label,
                        resolution=self.resolution.currentData(),compute_mode=self.compute_mode.currentData(),
                        cpu_threads=self.cpu_threads.value() if self.compute_mode.currentData()=='multicore' else 1)
+        self.generate_request(request)
+
+    def generate_request(self, request, replace_label=None):
+        if self.process or self.window.import_process:
+            return
         process = QProcess(self)
         self.process = process
         self.cancelled = False
+        self.replace_label = replace_label
         self.pending_area = request
-        self.window.sampled_areas.set_area(request, 'Generating')
+        if replace_label is None:
+            self.window.sampled_areas.set_area(request, 'Generating')
         self.set_busy(True)
         self.summary.setText('Generating samples…')
         self.window.statusBar().showMessage('Generating samples…')
@@ -213,7 +222,8 @@ class SamplingPanel(QWidget):
         self.set_busy(False)
         try:
             if self.cancelled:
-                self.window.sampled_areas.set_area(self.pending_area, 'Not generated (cancelled)')
+                if self.replace_label is None:
+                    self.window.sampled_areas.set_area(self.pending_area, 'Not generated (cancelled)')
                 self.summary.setText('Generation cancelled. Existing datasets retained.')
                 return
             if code:
@@ -221,14 +231,32 @@ class SamplingPanel(QWidget):
             batch = json.loads(bytes(process.readAllStandardOutput()))
             if batch['document'] != self.window.geometry['document']:
                 raise ValueError('The geometry changed during generation.')
-            self.batches.append(batch)
-            self.window.sampled_areas.set_area(batch)
+            if self.replace_label is not None:
+                old = self.replace_label
+                previous, _ = self.window.sampled_areas.areas[old]
+                if previous.get('colour'):
+                    batch['colour'] = previous['colour']
+                index = next((i for i,b in enumerate(self.batches) if b['label']==old),None)
+                if batch['label'] != old:
+                    self.window.sampled_areas.rename_area(old,batch['label'])
+                if index is None:
+                    self.batches.append(batch)
+                else:
+                    self.batches[index] = batch
+                self.window.sampled_areas.set_area(batch)
+                if self.window.selected_area == old:
+                    self.window.show_sampled_area(batch['label'])
+                self.window.remap_parameter_label(old,batch['label'])
+            else:
+                self.batches.append(batch)
+                self.window.sampled_areas.set_area(batch)
             self.label.setText(self.next_available_label(batch['label']))
             self.summary.setText(f"{batch['label']}: {batch['count']} points\n" + '\n'.join(batch['notes']))
             self.refresh_preview()
             self.window.statusBar().showMessage(f"Generated {batch['count']} points for {batch['label']}")
         except (ValueError, KeyError) as error:
-            self.window.sampled_areas.set_area(self.pending_area, 'Not generated (failed)')
+            if self.replace_label is None:
+                self.window.sampled_areas.set_area(self.pending_area, 'Not generated (failed)')
             self.summary.setText('Generation failed. Existing datasets retained.')
             QMessageBox.warning(self, 'Sampling failed', str(error))
         finally:
@@ -247,6 +275,7 @@ class SamplingPanel(QWidget):
             process.waitForFinished(2000)
 
     def clear_batches(self):
+        self.window.parametrisation_setup = None
         self.batches.clear()
         self.window.clear_isolation()
         self.window.sampled_areas.clear_areas()

@@ -65,6 +65,15 @@ class ParametrisationDialog(QDialog):
         buttons = QHBoxLayout(); layout.addLayout(buttons)
         for title, callback in [('Save setup…', self.save), ('Load setup…', self.load), ('Close', self.close)]:
             button = QPushButton(title); button.clicked.connect(callback); buttons.addWidget(button)
+        if window.parametrisation_setup:
+            setup = window.parametrisation_setup
+            self.source_hash = setup['source_hash']
+            self.scope.setCurrentIndex(self.scope.findData(setup['scope']))
+            for spin,value in zip(self.offsets,setup['translation']):spin.setValue(value)
+            for i in range(self.regions.count()):
+                item=self.regions.item(i)
+                item.setCheckState(Qt.CheckState.Checked if item.text() in setup['regions'] else Qt.CheckState.Unchecked)
+
 
     def mark_changed(self):
         if self.window.view.translation_preview is not None:
