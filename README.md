@@ -27,6 +27,8 @@ Try the included fixture directly:
 uv run geosampler examples/geometries/cfdbench/sphere_unstructured.geo
 ```
 
+Normal launches use automatic graphics selection, including the NVIDIA/Wayland
+configuration. **Help → Graphics information** shows the actual renderer.
 For graphics compatibility, try `uv run geosampler --software-rendering`.
 
 ## Intended workflow

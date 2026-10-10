@@ -90,3 +90,17 @@ Validation includes asynchronous import of both reference files, face clicks,
 annulus hole rejection, edge clicks and multi-selection, tree synchronization,
 file replacement, import failure preservation, and drag suppression. The real
 Qt WebEngine renderer and QWebChannel bridge are exercised on Wayland.
+
+## NVIDIA rendering on Linux/Wayland
+
+Normal launches automatically apply the NVIDIA workaround inherited from
+PyniteGUI when one NVIDIA GPU drives the connected display: Qt Vulkan backend,
+NVIDIA EGL/Vulkan driver selection, and exclusion of Mesa Vulkan layers. These
+settings apply only to this application process and respect existing graphics
+environment overrides. Do not pass `--software-rendering` for GPU rendering.
+
+PySide6 is pinned to 6.11.2, matching PyniteGUI. On this host, Qt 6.12 stalled
+with the automatic NVIDIA setup, while 6.11.2 successfully reported
+`ANGLE (NVIDIA Corporation, Quadro RTX 4000/PCIe/SSE2, OpenGL ES 3.2)` through
+the actual WebGL context. Check Help → Graphics information for the observed
+renderer. The software fallback remains available for other machines.

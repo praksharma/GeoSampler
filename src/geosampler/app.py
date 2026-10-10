@@ -93,7 +93,9 @@ class MainWindow(QMainWindow):
             action.setChecked(name == saved_theme)
             action.triggered.connect(lambda checked=False, name=name: self.set_theme(name))
             self.theme_group.addAction(action)
-        self.menuBar().addMenu("&Help").addAction("About GeoSampler", self.about)
+        help_menu = self.menuBar().addMenu("&Help")
+        help_menu.addAction("Graphics information", self.graphics_information)
+        help_menu.addAction("About GeoSampler", self.about)
         self.resizeDocks([self.geometry_dock, self.properties_dock], [240, 260], Qt.Orientation.Horizontal)
         if self.settings.contains("geometry"):
             self.restoreGeometry(self.settings.value("geometry"))
@@ -129,6 +131,21 @@ class MainWindow(QMainWindow):
 
     def apply_theme(self):
         self.view.apply_theme()
+
+    def graphics_information(self):
+        if not self.view.is_ready:
+            QMessageBox.information(self, "Graphics information", "The 3D renderer is not ready.")
+            return
+        def received(value):
+            try:
+                info = json.loads(value)
+                text = f"Renderer: {info['renderer']}\n\nVendor: {info['vendor']}\n\n{info['version']}"
+                if info['lost']:
+                    text += "\n\nGraphics context lost."
+            except (TypeError, ValueError, KeyError):
+                text = "Renderer information is unavailable."
+            QMessageBox.information(self, "Graphics information", text)
+        self.view.web.page().runJavaScript("JSON.stringify(window.geoViewer.diagnostics())", received)
 
     def about(self):
         QMessageBox.about(self, "About GeoSampler", f"GeoSampler {__version__}\nGeometry-aware sampling for PINNs.\n\nGmsh geometry import with face and edge selection. Sampling is planned.\nAdapted from PyniteGUI; licensed under AGPL-3.0-only.\nThree.js is distributed under its MIT licence.")

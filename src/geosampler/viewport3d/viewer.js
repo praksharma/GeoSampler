@@ -92,7 +92,13 @@ renderer.domElement.addEventListener('pointerup',event=>{
   const object=pickAt(event.clientX,event.clientY);
   window.geoBridge?.picked(documentId,object?.userData.dimension||0,object?.userData.tag||0,event.ctrlKey||event.metaKey||event.shiftKey);
 });
-window.geoViewer={orient,appearance,loadGeometry,setMode,setSelection,reset:()=>orient(0)};
+function diagnostics(){
+  const gl=renderer.getContext(),extension=gl.getExtension('WEBGL_debug_renderer_info');
+  return {renderer:gl.getParameter(extension?extension.UNMASKED_RENDERER_WEBGL:gl.RENDERER),
+    vendor:gl.getParameter(extension?extension.UNMASKED_VENDOR_WEBGL:gl.VENDOR),
+    version:gl.getParameter(gl.VERSION),lost:gl.isContextLost()};
+}
+window.geoViewer={orient,appearance,loadGeometry,setMode,setSelection,diagnostics,reset:()=>orient(0)};
 renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();window.geoReportFailure('Graphics context lost. Restart the application.');});
 addEventListener('resize',resize);resize();appearance({canvas:'#fafcfc',grid:'#e2e7e8',showGrid:true,showAxes:true});orient(0);setMode('face');
 const clock=new THREE.Clock();renderer.setAnimationLoop(()=>{gizmo.update(clock.getDelta());controls.update();renderer.clear();renderer.render(scene,camera);gizmo.render();});
