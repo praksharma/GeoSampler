@@ -48,7 +48,7 @@ class MainWindow(QMainWindow):
         for label, attribute in (("Grid", "show_grid"), ("Axes", "show_axes")):
             action = self.toolbar.addAction(label)
             action.setCheckable(True)
-            action.setChecked(True)
+            action.setChecked(getattr(self.view, attribute))
             action.toggled.connect(lambda checked, attr=attribute: self.set_visibility(attr, checked))
         self.toolbar.addSeparator()
         self.selection_tools = QActionGroup(self)

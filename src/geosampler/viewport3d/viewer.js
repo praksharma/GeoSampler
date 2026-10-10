@@ -153,6 +153,6 @@ function diagnostics(){
 }
 window.geoViewer={orient,appearance,loadGeometry,setMode,setSelection,setSamples,setSampleStyle,diagnostics,reset:()=>orient(0)};
 renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();window.geoReportFailure('Graphics context lost. Restart the application.');});
-addEventListener('resize',resize);resize();appearance({canvas:'#fafcfc',grid:'#e2e7e8',showGrid:true,showAxes:true});orient(0);setMode('face');
+addEventListener('resize',resize);resize();appearance({canvas:'#fafcfc',grid:'#e2e7e8',showGrid:false,showAxes:true});orient(0);setMode('face');
 const clock=new THREE.Clock();renderer.setAnimationLoop(()=>{gizmo.update(clock.getDelta());controls.update();renderer.clear();renderer.render(scene,camera);gizmo.render();});
 window.geoRendererReady=true;window.geoBridge?.ready();

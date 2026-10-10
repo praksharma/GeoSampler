@@ -48,7 +48,8 @@ class Viewport(QWidget):
         self.samples = {"batches": [], "visible": True, "through": True, "size": 7}
         self.selection = []
         self.mode = "face"
-        self.show_grid = self.show_axes = True
+        self.show_grid = False
+        self.show_axes = True
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         self.error = QLabel()

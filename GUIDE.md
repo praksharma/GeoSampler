@@ -4,7 +4,8 @@
 
 Drag with the left mouse button to orbit; right-drag to pan; scroll to zoom.
 Use the camera selector or the bottom-right orientation gizmo for standard views.
-The reference grid is in the XY plane. Grid and axes can be hidden independently.
+The reference grid is hidden by default. Use Grid to show it in the XY plane
+when needed. Grid and axes can be toggled independently.
 Reset view returns to the default isometric camera; it fits the loaded geometry.
 
 Left: Geometry and Regions. Right: Properties. Bottom: optional Results pane.

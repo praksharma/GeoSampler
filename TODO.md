@@ -16,6 +16,7 @@ contains the boundary partitions; GeoSampler does not create or edit them.
 - [x] Reuse PyniteGUI's offline renderer, orientation gizmo and Qt appearance.
 - [x] Empty 3D viewport with dockable left/right panes and optional Results pane.
 - [x] Menus, camera controls, grid/axes toggles, themes and layout persistence.
+- [x] Hide the reference grid by default to keep geometry unobstructed.
 - [x] Remove structural-analysis tools and dependencies.
 - [x] Add source-attributed CFDBench annulus and sphere geometry fixtures.
 - [x] Verify face/edge identity, physical groups and display tessellation with Gmsh.
