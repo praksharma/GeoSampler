@@ -121,6 +121,28 @@ class GeometryTest(unittest.TestCase):
                 end=time.monotonic()+.3
                 while time.monotonic()<end:self.app.processEvents()
                 window.grab().save('/tmp/geosampler-import-preview.png')
+                # Reproduce sampling two unrelated sphere faces with the default label.
+                window.sampling.target.setCurrentIndex(0)
+                window.sampling.label.setText('boundary')
+                window.sampling.count.setValue(128)
+                window.sampling.method.setCurrentIndex(window.sampling.method.findData('random'))
+                with patch('geosampler.sampling_panel.QMessageBox.information') as information:
+                    for tag in (1, 6):
+                        window.pick_entity(2,tag,False)
+                        window.sampling.start()
+                        self.assertIsNotNone(window.sampling.process)
+                        self.wait_for(lambda: window.sampling.process is None, seconds=45)
+                    information.assert_not_called()
+                self.assertEqual(len(window.sampling.batches),2)
+                for batch,tag in zip(window.sampling.batches,(1,6)):
+                    self.assertEqual(batch['label'],'boundary')
+                    self.assertEqual(batch['entities'],[[2,tag]])
+                    self.assertEqual(set(batch['entity_tags']),{tag})
+                    self.assertEqual(batch['count'],128)
+                self.wait_for(lambda: self.javascript(window, 'window.geoViewer.diagnostics().sampleCount')==256)
+                self.assertIn('Face 1',window.sample_results.text())
+                self.assertIn('Face 6',window.sample_results.text())
+                window.sampling.clear_batches()
                 window.sampling.target.setCurrentIndex(1)
                 window.sampling.label.setText('interior')
                 window.sampling.resolution.setCurrentIndex(0)

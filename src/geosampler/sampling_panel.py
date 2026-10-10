@@ -45,6 +45,7 @@ class SamplingPanel(QWidget):
         self.seed.setValue(42)
         form.addRow('Seed', self.seed)
         self.label = QLineEdit('boundary')
+        self.label.setToolTip('A shared label for the sampled region. Different faces or edges may use the same label; each generation keeps its own coordinates and entity tags.')
         form.addRow('Dataset label', self.label)
         self.resolution = QComboBox()
         for title, number in [('Standard', 32), ('Fine', 64)]:
@@ -143,9 +144,6 @@ class SamplingPanel(QWidget):
         label = self.label.text().strip()
         if not label:
             QMessageBox.information(self, 'Dataset label', 'Give this dataset a label before generating points.')
-            return
-        if any(batch['label'] == label for batch in self.batches):
-            QMessageBox.information(self, 'Dataset label', 'This label already exists. Choose another label or clear the generated datasets.')
             return
         geometry = self.window.geometry
         request = {key: geometry[key] for key in ('source', 'source_hash', 'document')}

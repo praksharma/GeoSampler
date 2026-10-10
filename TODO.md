@@ -83,6 +83,7 @@ Acceptance checks:
 
 - [x] Seven roadmap sampling methods with seeds and target point counts.
 - [x] Selected entities, imported groups and interior targets with labelled datasets.
+- [x] Shared labels across separate sampling runs, retaining each dataset’s entity associations.
 - [x] Background generation, cancellation and simultaneous point previews.
 - [ ] Saved per-region sampling configurations.
 - [x] Sampling previews.
