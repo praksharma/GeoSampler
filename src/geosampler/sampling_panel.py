@@ -230,6 +230,7 @@ class SamplingPanel(QWidget):
 
     def clear_batches(self):
         self.batches.clear()
+        self.window.clear_isolation()
         self.window.sampled_areas.clear_areas()
         self.refresh_preview()
         self.summary.setText('No generated datasets.')
@@ -238,7 +239,8 @@ class SamplingPanel(QWidget):
     def preview_style(self):
         return {'visible': self.show_points.isChecked(),
                 'through': self.through.isChecked(), 'size': self.point_size.value(),
-                'hiddenLabels': self.window.sampled_areas.hidden_labels()}
+                'hiddenLabels': self.window.sampled_areas.hidden_labels(),
+                'isolatedLabel': self.window.isolated_label()}
 
     def refresh_style(self):
         self.size_label.setText(f'{self.point_size.value()} px')

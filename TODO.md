@@ -17,6 +17,8 @@ contains the boundary partitions; GeoSampler does not create or edit them.
 - [x] 3D viewport with dockable left/right panes and a Sampled Areas tree.
 - [x] Menus, camera controls, grid/axes toggles, themes and layout persistence.
 - [x] Hide the reference grid by default to keep geometry unobstructed.
+- [x] Grouped icon toolbar with tooltips, layered geometry/sample visibility,
+      and reversible region isolation with optional geometry context.
 - [x] Scrollable Properties alongside Sampling and the geometry tree.
 - [x] Replace the Results dock with a Sampled Areas tree, per-dataset visibility,
       generation status and region details in Properties.

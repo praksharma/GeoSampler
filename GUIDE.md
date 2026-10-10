@@ -280,3 +280,34 @@ or failed request remains as Not generated, with no visibility checkbox or
 exported coordinates. These entries represent attempted runs, not saved region
 configurations. Clear generated datasets clears the tree, including unfinished
 attempts; replacing geometry clears it as well.
+
+
+## Toolbar and visibility
+
+The viewport tools use theme-aware icons and hover tooltips. Separators group
+file operations, camera controls, grid/axes aids, selection, visibility and region
+isolation. Open/export are also available in File; visibility actions have named
+entries under View → Visibility. The camera orientation dropdown retains view
+names so each direction remains explicit. Keyboard shortcuts remain available.
+
+Geometry is the master visibility switch. Faces and Edges independently control
+shading and wireframe; hiding Faces retains enabled edges. Hiding Geometry hides
+both while remembering the separate Face/Edge choices. Hidden CAD entities cannot
+be picked in the viewport; the geometry tree still allows their selection.
+Visibility toggles do not clear the existing selection.
+
+All samples mirrors Show sample points in Sampling. Selected region samples
+mirrors the checkbox of the currently selected generated Sampled Areas label.
+Both controls preserve the coordinates and export data.
+
+Select a generated label and toggle Isolate region to filter the viewport to that
+label's sample points. Isolation initially hides geometry; Geometry in isolation
+optionally shows the region's faces and their boundary edges (or its sampled
+edges). For domain-interior samples, the geometry context is the whole domain,
+because interior generation currently targets all volumes. Global visibility
+switches and region checkboxes still apply during isolation. Selecting another
+generated label changes the isolation target. Turning isolation off restores the
+normal visibility choices without changing them. Clearing datasets or replacing
+the geometry exits isolation. These controls affect only display: geometry,
+selection, sampling settings and generated coordinates are retained, and export
+includes hidden and non-isolated datasets.

@@ -3,7 +3,7 @@ import argparse
 import sys
 from pathlib import Path
 import json
-from PySide6.QtCore import QProcess, QSettings, Qt
+from PySide6.QtCore import QProcess, QSettings, Qt, QSize, QSignalBlocker
 from PySide6.QtGui import QActionGroup
 from PySide6.QtWidgets import (QApplication, QComboBox, QDockWidget, QLabel,
     QMainWindow, QMessageBox, QToolBar, QTreeWidget, QTreeWidgetItem, QFileDialog, QAbstractItemView, QScrollArea, QSizePolicy, QSplitter)
@@ -14,6 +14,7 @@ from .graphics import configure_graphics
 from .window_controls import install_window_controls
 from .sampling_panel import SamplingPanel
 from .sampled_areas import SampledAreasTree, area_details
+from .icons import tool_icon
 
 
 class MainWindow(QMainWindow):
@@ -23,6 +24,8 @@ class MainWindow(QMainWindow):
         self.geometry = None
         self.import_process = None
         self.selection = set()
+        self.selected_area = None
+        self.icon_actions = []
         self.items = {}
         self.setWindowTitle("GeoSampler — Untitled")
         self.resize(1280, 820)
@@ -40,6 +43,13 @@ class MainWindow(QMainWindow):
         self.toolbar = QToolBar("Viewport", self)
         self.toolbar.setObjectName("viewport_toolbar")
         self.addToolBar(self.toolbar)
+        self.toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+        self.toolbar.setIconSize(QSize(24,24))
+        for action, icon in ((self.open_action,'open'),(self.export_action,'export')):
+            action.setToolTip(action.text().replace('&',''))
+            self.icon_actions.append((action,icon))
+            self.toolbar.addAction(action)
+        self.toolbar.addSeparator()
         self.orientation = QComboBox()
         self.orientation.addItems(["Isometric", "Front XY", "Top XZ", "Right YZ", "Back XY", "Bottom XZ", "Left YZ", "Orbit"])
         self.orientation.model().item(7).setEnabled(False)
@@ -47,9 +57,10 @@ class MainWindow(QMainWindow):
         self.orientation.activated.connect(lambda index: self.view.call("orient", index))
         self.view.oriented.connect(self.orientation.setCurrentIndex)
         self.toolbar.addWidget(self.orientation)
-        self.toolbar.addAction("Reset view", lambda: self.view.call("reset"))
+        self.tool_action("Reset view", "reset", "Fit the geometry in the isometric view", lambda: self.view.call("reset"))
+        self.toolbar.addSeparator()
         for label, attribute in (("Grid", "show_grid"), ("Axes", "show_axes")):
-            action = self.toolbar.addAction(label)
+            action = self.tool_action(label, label.lower(), f"Show/hide {label.lower()}")
             action.setCheckable(True)
             action.setChecked(getattr(self.view, attribute))
             action.toggled.connect(lambda checked, attr=attribute: self.set_visibility(attr, checked))
@@ -57,7 +68,7 @@ class MainWindow(QMainWindow):
         self.selection_tools = QActionGroup(self)
         self.selection_actions = {}
         for mode, label, shortcut in (("face", "Select faces", "F"), ("edge", "Select edges", "E")):
-            action = self.toolbar.addAction(label)
+            action = self.tool_action(label, mode, label)
             action.setCheckable(True)
             action.setChecked(mode == "face")
             action.setShortcut(shortcut)
@@ -65,7 +76,35 @@ class MainWindow(QMainWindow):
             action.triggered.connect(lambda checked=False, mode=mode: self.set_selection_mode(mode))
             self.selection_tools.addAction(action)
             self.selection_actions[mode] = action
-        self.toolbar.addAction("Clear selection", self.clear_selection).setShortcut("Esc")
+        self.tool_action("Clear selection", "clear", "Clear CAD entity selection (Esc)", self.clear_selection).setShortcut("Esc")
+        self.toolbar.addSeparator()
+        visibility_menu = self.view_menu.addMenu('Visibility')
+        self.visibility_actions = {}
+        for key, label, icon, hint in (
+            ('geometry','Geometry','geometry','Show/hide all geometry without changing selections'),
+            ('faces','Faces','faces','Show/hide shaded faces; keep enabled edges'),
+            ('edges','Edges','edges','Show/hide edges and their highlights')):
+            action = self.tool_action(label,icon,hint)
+            action.setCheckable(True);action.setChecked(True)
+            action.toggled.connect(lambda checked, key=key: self.view.set_geometry_visibility({key:checked}))
+            self.visibility_actions[key] = action
+            visibility_menu.addAction(action)
+        self.samples_action = self.tool_action('All samples','samples','Show/hide all generated sample points')
+        self.samples_action.setCheckable(True);self.samples_action.setChecked(True)
+        visibility_menu.addAction(self.samples_action)
+        self.region_samples_action = self.tool_action('Selected region samples','region','Show/hide only the selected Sampled Areas region')
+        self.region_samples_action.setCheckable(True);self.region_samples_action.setEnabled(False)
+        self.region_samples_action.toggled.connect(self.set_region_samples_visible)
+        visibility_menu.addAction(self.region_samples_action)
+        self.toolbar.addSeparator();visibility_menu.addSeparator()
+        self.isolate_action = self.tool_action('Isolate region','isolate','Isolate the selected Sampled Areas label; toggle off to restore visibility')
+        self.isolate_action.setCheckable(True);self.isolate_action.setEnabled(False)
+        self.isolate_action.toggled.connect(self.update_isolation)
+        self.isolate_geometry_action = self.tool_action('Geometry in isolation','context','Include only the isolated region’s geometry; otherwise show its points alone')
+        self.isolate_geometry_action.setCheckable(True)
+        self.isolate_geometry_action.setEnabled(False)
+        self.isolate_geometry_action.toggled.connect(self.update_isolation)
+        visibility_menu.addAction(self.isolate_action);visibility_menu.addAction(self.isolate_geometry_action)
         self.view.picked.connect(self.pick_entity)
         tree = QTreeWidget()
         self.tree = tree
@@ -89,7 +128,10 @@ class MainWindow(QMainWindow):
         properties.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.properties_dock = self.dock("Properties", "properties", self.scrollable_text(properties), Qt.DockWidgetArea.RightDockWidgetArea)
         self.sampling = SamplingPanel(self)
+        self.samples_action.toggled.connect(self.sampling.show_points.setChecked)
+        self.sampling.show_points.toggled.connect(self.samples_action.setChecked)
         self.sampled_areas.visibilityChanged.connect(self.sampling.refresh_style)
+        self.sampled_areas.visibilityChanged.connect(self.sync_region_visibility)
         self.sampling_dock = self.dock("Sampling", "sampling", self.sampling, Qt.DockWidgetArea.RightDockWidgetArea)
         self.tabifyDockWidget(self.properties_dock, self.sampling_dock)
         self.sampling_dock.raise_()
@@ -113,6 +155,64 @@ class MainWindow(QMainWindow):
             self.restoreGeometry(self.settings.value("geometry"))
         if self.settings.contains("layout"):
             self.restoreState(self.settings.value("layout"))
+        self.refresh_icons()
+
+    def tool_action(self, title, icon, tooltip, callback=None):
+        action = self.toolbar.addAction(title)
+        action.setToolTip(tooltip)
+        action.setStatusTip(tooltip)
+        if callback:
+            action.triggered.connect(callback)
+        self.icon_actions.append((action,icon))
+        return action
+
+    def refresh_icons(self):
+        colour = self.palette().windowText().color().name()
+        for action, name in self.icon_actions:
+            action.setIcon(tool_icon(name,colour))
+
+    def sync_region_visibility(self):
+        item = self.sampled_areas.items.get(self.selected_area)
+        generated = bool(item and self.sampled_areas.areas[self.selected_area][1]=='Generated')
+        self.region_samples_action.setEnabled(generated)
+        with QSignalBlocker(self.region_samples_action):
+            self.region_samples_action.setChecked(generated and item.checkState(0)==Qt.CheckState.Checked)
+
+    def set_region_samples_visible(self, visible):
+        if self.selected_area in self.sampled_areas.items:
+            self.sampled_areas.items[self.selected_area].setCheckState(0,Qt.CheckState.Checked if visible else Qt.CheckState.Unchecked)
+
+    def isolated_label(self):
+        return self.selected_area if self.isolate_action.isChecked() else None
+
+    def clear_isolation(self):
+        self.selected_area = None
+        self.isolate_action.setChecked(False)
+        self.isolate_action.setEnabled(False)
+        self.region_samples_action.setEnabled(False)
+        with QSignalBlocker(self.region_samples_action):
+            self.region_samples_action.setChecked(False)
+        self.view.set_geometry_visibility({'isolatedEntities':None})
+
+    def update_isolation(self):
+        self.isolate_geometry_action.setEnabled(self.isolate_action.isChecked())
+        entities = None
+        label = self.isolated_label()
+        if label:
+            area, status = self.sampled_areas.areas[label]
+            entities = []
+            if self.isolate_geometry_action.isChecked():
+                entities = [list(key) for key in area['entities']]
+                if area['entity_dimension'] == 3:
+                    # Interior generation currently targets all domain volumes.
+                    entities = [[e['dimension'],e['tag']] for e in self.geometry['entities']]
+                else:
+                    keys = {tuple(key) for key in entities}
+                    entities += [boundary for e in self.geometry['entities']
+                                 if (e['dimension'],e['tag']) in keys for boundary in e['boundary'] if boundary[0]==1]
+        self.view.set_geometry_visibility({'isolatedEntities':entities})
+        if hasattr(self,'sampling'):
+            self.sampling.refresh_style()
 
     @staticmethod
     def scrollable_text(label):
@@ -135,6 +235,13 @@ class MainWindow(QMainWindow):
 
     def show_sampled_area(self, label):
         area, status = self.sampled_areas.areas[label]
+        self.selected_area = label
+        self.sync_region_visibility()
+        if status != 'Generated':
+            self.isolate_action.setChecked(False)
+        self.isolate_action.setEnabled(status == 'Generated')
+        if self.isolate_action.isChecked():
+            self.update_isolation()
         text = label + '\n\n' + '\n'.join(area_details(area, status))
         if area.get('notes'):
             text += '\n\n' + '\n'.join(area['notes'])
@@ -186,6 +293,7 @@ class MainWindow(QMainWindow):
     def set_theme(self, name):
         configure_theme(QApplication.instance(), name)
         self.settings.setValue("theme", name)
+        self.refresh_icons()
 
     def apply_theme(self):
         self.view.apply_theme()

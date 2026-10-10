@@ -50,6 +50,7 @@ class Viewport(QWidget):
         self.mode = "face"
         self.show_grid = False
         self.show_axes = True
+        self.geometry_visibility = {"geometry":True,"faces":True,"edges":True,"isolatedEntities":None}
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         self.error = QLabel()
@@ -89,6 +90,10 @@ class Viewport(QWidget):
         self.call("appearance", {**{k: colors()[k] for k in ("canvas", "grid")},
                                  "showGrid": self.show_grid, "showAxes": self.show_axes})
 
+    def set_geometry_visibility(self, visibility):
+        self.geometry_visibility.update(visibility)
+        self.call("setGeometryVisibility", self.geometry_visibility)
+
     def set_geometry(self, geometry):
         self.geometry = geometry
         self.selection = []
@@ -100,6 +105,7 @@ class Viewport(QWidget):
         self.call("setMode", self.mode)
         self.call("setSelection", self.selection)
         self.call("setSamples", self.samples)
+        self.call("setGeometryVisibility",self.geometry_visibility)
 
     def set_mode(self, mode):
         self.mode = mode

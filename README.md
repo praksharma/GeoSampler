@@ -20,7 +20,9 @@ uv run geosampler
 
 Use **File → Open Geometry** (Ctrl+O), then **Select faces** (F) or
 **Select edges** (E). Ctrl/Shift-click toggles additional entities; Esc clears.
-Drag to orbit, right-drag to pan, and scroll to zoom.
+Drag to orbit, right-drag to pan, and scroll to zoom. Hover the grouped toolbar
+icons for tooltips; use visibility controls to hide geometry, faces, edges or
+points, or isolate a selected sampled region.
 
 Open the **Sampling** tab on the right. Choose selected faces/edges, an imported
 group, or the domain interior; set the method, count, seed, and dataset label;

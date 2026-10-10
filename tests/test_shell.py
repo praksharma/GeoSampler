@@ -44,6 +44,10 @@ class ShellTest(unittest.TestCase):
                 self.assertTrue(window.view.is_ready, window.view.error.text())
                 self.assertFalse(any(d.objectName()=='results' for d in window.findChildren(QDockWidget)))
                 self.assertEqual(window.sampled_areas.root.text(0),'Sampled Areas')
+                self.assertEqual(window.toolbar.toolButtonStyle(),Qt.ToolButtonStyle.ToolButtonIconOnly)
+                for action,name in window.icon_actions:
+                    self.assertFalse(action.icon().isNull(),name)
+                    self.assertTrue(action.toolTip(),name)
                 self.assertTrue(window.geometry_dock.isVisible())
                 self.assertTrue(window.properties_dock.isVisible())
                 self.assertTrue(self.javascript(window, 'window.geoFailure === null'))
