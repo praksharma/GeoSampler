@@ -344,7 +344,11 @@ are outside the initial release; use the verified neutral export formats instead
 - [x] Right-click Edit: label, target entities, method, count, seed, accuracy and CPU settings.
 - [x] Replace edited area only after success; preserve originals on cancellation/failure.
 - [x] Versioned validation, checksums, no pickle, atomic writes and failed-load preservation.
-- [ ] Background project I/O and measured large-project memory/performance checks.
-- [ ] Autosave/recovery.
+- [x] Background project archive I/O and content fingerprints with editing locks;
+      measure 100k/1M-point persistence time, exact round trips and peak RSS.
+- [ ] Reduce large-project numeric/list copies; the 1M-point backend benchmark
+      peaks near 1.1 GiB, and large viewport restoration still needs profiling.
+- [x] Atomic two-minute recovery copies, live-session locks, startup recovery,
+      explicit Save As after recovery, and cleanup after successful save/discard.
 - [x] Unsaved-change Save/Discard/Cancel prompts before workspace replacement or
       closing; cancelled or failed saves retain the current workspace.

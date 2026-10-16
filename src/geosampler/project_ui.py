@@ -5,13 +5,14 @@ import json
 from pathlib import Path
 import tempfile
 from PySide6.QtCore import Qt, QByteArray, QEventLoop
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QProgressBar
 from .project import save_project, load_project
+from .recovery import RecoveryActions
 
 
-class ProjectActions:
+class ProjectActions(RecoveryActions):
     def project_busy(self):
-        return self.sampling.process or self.import_process or self.parametrisation_dialog or self.boundary_dialog or self.saving_project
+        return self.sampling.process or self.import_process or self.parametrisation_dialog or self.boundary_dialog or self.saving_project or self.project_io
 
     def refresh_project_actions(self):
         busy=bool(self.project_busy())
@@ -35,6 +36,42 @@ class ProjectActions:
                 'parametrisation':deepcopy(self.parametrisation_setup),
                 'layout':bytes(self.saveState()).hex(),'camera':camera}
 
+    def project_io_call(self, operation):
+        """Await one worker while Qt keeps rendering and processing events.
+
+        Dataset editing is locked for the job, so the worker can borrow original
+        numeric lists without duplicating an entire project on the UI thread.
+        """
+        from .project_worker import ProjectWorker
+        if self.project_io is not None:
+            raise ValueError('Another project operation is already running.')
+        worker = ProjectWorker(operation, self)
+        loop = QEventLoop()
+        locked = (self.sampling, self.tree, self.sampled_areas, self.boundary_button,
+                  self.parametrisation_button, self.open_action, self.export_action)
+        enabled = [control.isEnabled() for control in locked]
+        self.project_io = worker
+        for control in locked: control.setEnabled(False)
+        self.refresh_project_actions()
+        progress = QProgressBar(self)
+        progress.setRange(0,0); progress.setAccessibleName('Project file operation')
+        progress.setMaximumWidth(180)
+        self.statusBar().addPermanentWidget(progress)
+        worker.finished.connect(loop.quit)
+        try:
+            worker.start()
+            loop.exec()
+            worker.wait()
+            if worker.error is not None: raise worker.error
+            return worker.result
+        finally:
+            worker.wait()
+            self.project_io = None
+            self.statusBar().removeWidget(progress); progress.deleteLater()
+            for control, previous in zip(locked, enabled): control.setEnabled(previous)
+            self.refresh_project_actions()
+            worker.deleteLater()
+
     def workspace_digest(self):
         """Compare content/recipes, excluding ordinary viewport navigation."""
         if not self.geometry: return None
@@ -44,10 +81,12 @@ class ProjectActions:
                  for label, (area, status) in self.sampled_areas.areas.items()]
         payload = {'document': self.geometry['document'], 'source_hash': self.geometry['source_hash'],
                    'state': state, 'areas': areas}
-        digest = hashlib.sha256()
-        for chunk in json.JSONEncoder(sort_keys=True, allow_nan=False).iterencode(payload):
-            digest.update(chunk.encode('utf-8'))
-        return digest.hexdigest()
+        def fingerprint():
+            digest = hashlib.sha256()
+            for chunk in json.JSONEncoder(sort_keys=True, allow_nan=False).iterencode(payload):
+                digest.update(chunk.encode('utf-8'))
+            return digest.hexdigest()
+        return self.project_io_call(fingerprint)
 
     def mark_project_clean(self):
         self.saved_digest = self.workspace_digest()
@@ -87,11 +126,13 @@ class ProjectActions:
                 camera=json.loads(camera_json) if camera_json else None
                 areas=[(area,status,self.sampled_areas.items[label].checkState(0)==Qt.CheckState.Checked)
                        for label,(area,status) in self.sampled_areas.areas.items()]
-                save_project(path,self.geometry,areas,self.project_state(camera))
+                state = self.project_state(camera)
+                self.project_io_call(lambda: save_project(path,self.geometry,areas,state))
                 self.project_path=Path(path)
                 self.setWindowTitle('GeoSampler — '+self.project_path.name)
                 self.statusBar().showMessage('Project saved: '+str(path))
                 self.mark_project_clean()
+                self.clear_recovery()
                 result.append(True)
             except (ValueError,TypeError,OSError,KeyError) as error:
                 QMessageBox.warning(self,'Could not save project',str(error))
@@ -115,23 +156,24 @@ class ProjectActions:
         if self.project_busy():return
         cache=None
         try:
-            manifest,source=load_project(filename)
+            manifest,source=self.project_io_call(lambda: load_project(filename))
             dirty = self.has_unsaved_changes()
             if not self.confirm_unsaved_changes(): return
             # Saving may have replaced this same file while the prompt was open.
-            if dirty: manifest,source=load_project(filename)
+            if dirty: manifest,source=self.project_io_call(lambda: load_project(filename))
             geometry=manifest['geometry']
             # Retain a valid original path for relative .geo dependencies; otherwise
             # restore the embedded main CAD source without extracting arbitrary paths.
             path=Path(geometry['source'])
             try:
-                valid=path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest()==geometry['source_hash']
+                valid=self.project_io_call(lambda: path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest()==geometry['source_hash'])
             except OSError:
                 valid=False
             if self.project_cache and path.is_relative_to(self.project_cache.name):valid=False
             if not valid:
                 cache=tempfile.TemporaryDirectory(prefix='geosampler-project-')
-                path=Path(cache.name)/('model'+manifest['source_extension']);path.write_bytes(source)
+                path=Path(cache.name)/('model'+manifest['source_extension'])
+                self.project_io_call(lambda: path.write_bytes(source))
             geometry['source']=str(path)
             for record in manifest['areas']:
                 record['area']['source']=str(path)
@@ -180,12 +222,20 @@ class ProjectActions:
             if state.get('camera'):self.view.set_camera_state(state['camera'])
             self.setWindowTitle('GeoSampler — '+self.project_path.name)
             self.statusBar().showMessage('Project opened: '+str(filename))
-            self.mark_project_clean()
+            if 'recovery_origin' in state:
+                self.project_path = None  # Recovery always requires an explicit Save As destination.
+                self.recovered_from = Path(filename)
+                self.saved_digest = None
+                self.setWindowTitle('GeoSampler — Recovered unsaved project')
+            else:
+                self.mark_project_clean()
             if not valid and manifest['source_extension']=='.geo':
                 self.statusBar().showMessage('Project restored. Embedded .geo source is available; external Include/Merge dependencies may need restoring before regeneration.')
+            return True
         except Exception as error:
             if cache is not None and cache is not self.project_cache:cache.cleanup()
             QMessageBox.warning(self,'Could not open project',str(error))
+            return False
 
     def remap_parameter_label(self, old, new):
         if self.parametrisation_setup:

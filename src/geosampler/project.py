@@ -132,6 +132,8 @@ def validate_state(geometry, areas, state):
     for group in geometry['groups']:
         if group['dimension'] not in (0,1,2,3) or not isinstance(group['entities'],list) or not isinstance(group['name'],str):
             raise ValueError('Invalid group metadata.')
+    if 'recovery_origin' in state and state['recovery_origin'] is not None and not isinstance(state['recovery_origin'], str):
+        raise ValueError('Invalid recovery project reference.')
     labels={r['area']['label'] for r in areas}
     if state.get('selected_area') is not None and state['selected_area'] not in labels:
         raise ValueError('Missing selected area.')

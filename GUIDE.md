@@ -48,8 +48,8 @@ the included CFDBench annulus; do not reuse them blindly with other CAD.
 
 Before a general release, finish broader CAD trim/containment validation,
 small-feature and normal-orientation checks, real exporter compatibility,
-background project I/O/large-project measurements, autosave/recovery and
-cross-platform installation checks. Unknown units and assembly metadata remain
+large-project memory reductions/viewport measurements and cross-platform
+installation checks. Unknown units and assembly metadata remain
 explicit limitations. Full parameter sweeps, rotation/scaling, CAD regeneration
 and licensed translators are later roadmap work, not implemented release claims.
 
@@ -607,8 +607,43 @@ before replacement proceeds; cancelling Save As, changed CAD, invalid data or a
 failed disk write cancels the original replacement/close. Failed imports are
 validated before a replacement prompt, retaining the current workspace. Ordinary
 camera/selection navigation does not make a project dirty. Dataset visibility and
-colour changes do count as content changes. There is no automatic crash recovery
-or autosave yet. Large-project background I/O remains open work.
+colour changes do count as content changes. Archive reads/writes, validation and content fingerprints use one background
+worker while Qt keeps processing events. Editing and replacement controls are
+locked during the operation; the viewport remains interactive and an indeterminate
+progress indicator shows file work. Worker errors restore the controls and retain
+existing destinations. Viewport serialisation/restoration can still be expensive
+for large clouds and has not been certified responsive at one million points.
+
+Every two minutes, an idle dirty workspace writes an atomic recovery copy in the
+application data `recovery` directory (beside settings for explicit INI profiles).
+Unchanged copies are skipped. Autosave never changes the normal project path,
+marks the workspace saved, regenerates geometry, or overwrites the user's project.
+Source/hash failures retain the previous recovery copy and show a status message.
+Active import/generation, editors and project jobs postpone recovery writes.
+
+On startup, abandoned copies offer Recover, Discard or Cancel. Lock files prevent
+a live window's copy being offered by another window. Recovery loads validated
+cached geometry/data, keeps the workspace dirty and requires **Save As** to choose
+a destination; it never silently overwrites an original project. A recovered copy
+is transferred to the new window before the old copy is deleted. Successful manual
+saving or explicit discard/clean close removes that window's recovery copy;
+cancelling close retains it. The two-minute interval means very recent edits can
+still be lost on interruption. External `.geo` dependencies remain outside the
+embedded main-source recovery guarantee.
+
+Persistence measurements on the validation host (fresh process per size):
+
+| Points | Save | Load | Archive | Peak process RSS |
+| --- | --- | --- | --- | --- |
+| 100,000 | 0.112 s | 0.050 s | 3.19 MiB | 201.30 MiB |
+| 1,000,000 | 1.099 s | 0.417 s | 31.70 MiB | 1123.52 MiB |
+
+Run `uv run python tools/benchmark_projects.py --count 1000000` to repeat.
+This synthetic analytic annulus benchmark verifies exact coordinates, entity tags
+and normals. Peak RSS includes original and restored list-based clouds, scientific
+libraries and verification arrays. It measures backend archive persistence, not
+geometry generation or viewport rendering; these figures are not UI latency or
+cross-machine guarantees. Reducing numeric/list copies remains open work.
 
 Use **File → Save project** (`Ctrl+S`) or **Save project as…** (`Ctrl+Shift+S`)
 to write a `.gsproj` archive. **Open project…** (`Ctrl+Shift+O`) restores it;

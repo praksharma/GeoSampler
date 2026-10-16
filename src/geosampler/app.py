@@ -27,6 +27,7 @@ class MainWindow(ProjectActions, QMainWindow):
         self.project_path = None
         self.saved_digest = None
         self.saving_project = False
+        self.project_io = None
         self.project_cache = None
         self.parametrisation_setup = None
         self.boundary_regions = []
@@ -186,6 +187,7 @@ class MainWindow(ProjectActions, QMainWindow):
             self.restoreState(self.settings.value("layout"))
         self.refresh_icons()
         self.refresh_project_actions()
+        self.initialize_recovery()
 
     def open_boundary_regions(self):
         if self.project_busy() or not self.geometry:
@@ -209,7 +211,7 @@ class MainWindow(ProjectActions, QMainWindow):
         if self.geometry: self.update_selection()
 
     def open_parametrisation(self):
-        if self.sampling.process or self.import_process or self.saving_project:
+        if self.sampling.process or self.import_process or self.saving_project or self.project_io is not None:
             QMessageBox.information(self, 'Parametrisation', 'Wait for current processing to finish.')
             return
         if not self.sampling.batches:
@@ -527,7 +529,7 @@ class MainWindow(ProjectActions, QMainWindow):
             self.load_geometry(path)
 
     def load_geometry(self, path):
-        if self.import_process is not None or self.sampling.process is not None or self.saving_project:
+        if self.import_process is not None or self.sampling.process is not None or self.saving_project or self.project_io is not None:
             return
         process = QProcess(self)
         self.import_process = process
@@ -565,6 +567,7 @@ class MainWindow(ProjectActions, QMainWindow):
             process.deleteLater()
 
     def show_geometry(self, geometry):
+        self.clear_recovery()
         self.geometry = geometry
         self.boundary_regions = []
         self.view.set_boundary_regions([])
@@ -671,7 +674,7 @@ class MainWindow(ProjectActions, QMainWindow):
         self.properties.setText("\n".join(lines))
 
     def closeEvent(self, event):
-        if self.saving_project:
+        if self.saving_project or self.project_io is not None:
             event.ignore()
             return
         if self.boundary_dialog is not None:
@@ -681,6 +684,8 @@ class MainWindow(ProjectActions, QMainWindow):
         if not self.confirm_unsaved_changes():
             event.ignore()
             return
+        self.recovery_timer.stop()
+        self.clear_recovery()
         self.sampling.shutdown()
         if self.import_process:
             process = self.import_process

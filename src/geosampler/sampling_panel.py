@@ -175,7 +175,7 @@ class SamplingPanel(QWidget):
         return f'{base}_{number}'
 
     def start(self):
-        if self.process or not self.window.geometry or self.window.import_process or self.window.saving_project:
+        if self.process or not self.window.geometry or self.window.import_process or self.window.saving_project or self.window.project_io is not None:
             return
         target = self.target.currentData()
         snapshot = None
@@ -213,7 +213,7 @@ class SamplingPanel(QWidget):
         self.generate_request(request)
 
     def generate_request(self, request, replace_label=None):
-        if self.process or self.window.import_process or self.window.saving_project:
+        if self.process or self.window.import_process or self.window.saving_project or self.window.project_io is not None:
             return
         process = QProcess(self)
         self.process = process
