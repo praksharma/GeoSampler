@@ -25,6 +25,16 @@ class CadImportTest(unittest.TestCase):
                 self.assertEqual(geometry['source_format'],kind)
                 self.assertEqual(geometry['solid_count'],solid_count)
                 self.assertTrue(any(e['dimension']==2 for e in geometry['entities']))
+                topology = {(e['dimension'], e['tag']): e for e in geometry['topology']}
+                self.assertEqual(sum(d == 3 for d, _ in topology), solid_count)
+                self.assertTrue(any(d == 0 for d, _ in topology))
+                for entity in geometry['entities']:
+                    original = topology[(entity['dimension'], entity['tag'])]
+                    self.assertEqual(original['type'], entity['type'])
+                    self.assertEqual(original['name'], entity['name'])
+                    self.assertEqual(original['groups'], entity['groups'])
+                    for ref in original['boundary']:
+                        self.assertIn([entity['dimension'], entity['tag']], topology[tuple(ref)]['upward'])
                 batches=[]
                 for dimension in (2,1):
                     entity=next(e for e in geometry['entities'] if e['dimension']==dimension and not e['degenerate'])

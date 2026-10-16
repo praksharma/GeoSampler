@@ -6,12 +6,14 @@ import zipfile
 import numpy as np
 from .cad_import import FORMATS
 from .sampling_methods import METHODS
+from .topology import validate_topology
 from .export import atomic_write, to_xarray
 
 
 def save_project(path, geometry, areas, state):
     if not geometry:
         raise ValueError('Open geometry before saving a project.')
+    validate_topology(geometry)
     source = Path(geometry['source'])
     data = source.read_bytes()
     if hashlib.sha256(data).hexdigest() != geometry['source_hash']:
@@ -101,6 +103,7 @@ def load_project(path):
 
 def validate_state(geometry, areas, state):
     """Reject corrupt UI recipes before any widgets or current data are replaced."""
+    validate_topology(geometry)
     if not isinstance(geometry['source'],str) or not isinstance(geometry['name'],str) or geometry['dimension'] not in (2,3):
         raise ValueError('Invalid geometry metadata.')
     for entity in geometry['entities']:

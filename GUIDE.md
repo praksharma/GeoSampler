@@ -439,6 +439,24 @@ synchronisation; scripts retain their original kernel. Available CAD entity name
 appear in geometry-tree tooltips. Names are not automatically interpreted as BCs
 or Gmsh physical groups, and face naming fidelity depends on the source exporter.
 
+The backend model exposes `topology` separately from the face/edge display
+`entities`. Each original vertex (dimension 0), edge (1), face (2) and solid (3)
+has a document-scoped `(dimension, tag)` identity, CAD type/name, six coordinate
+bounds, physical-group memberships, immediate `boundary` references and `upward`
+adjacency references. Both adjacency lists contain `[dimension, tag]` pairs;
+orientation is not encoded and must not be used to infer outward normals.
+Construction vertices and degenerate edges remain in this model even if they
+have no visible primitives. Topology contains no display triangles and is not an
+editable or standalone exact-geometry representation; geometric evaluation still
+uses the source CAD through Gmsh. Numeric tags are not stable across reimports.
+
+Both built-in and Open CASCADE `.geo` scripts retain their kernels. Regression
+checks construct the same cube in each kernel and verify original entity counts,
+adjacency, physical groups and edge/face/interior sampling. STEP/BREP/IGES fixtures
+also expose this topology. Projects preserve it and reject inconsistent entity
+references, adjacency or bounds before replacing the workspace. Older projects
+without topology remain readable; reopen the source to populate the new model.
+
 Files containing faces but no solid volumes can be displayed and sampled on faces
 and edges. Neutral-format interior sampling requires imported solid volumes and
 reports a clear error for surface-only files. No automatic sewing is introduced

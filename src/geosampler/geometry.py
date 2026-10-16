@@ -8,6 +8,22 @@ from uuid import uuid4
 from .cad_import import open_source
 
 
+def extract_topology(model, groups):
+    """Capture original CAD entities without retaining backend objects or meshes."""
+    records = []
+    for dim, tag in model.getEntities():
+        upward, downward = model.getAdjacencies(dim, tag)
+        records.append({
+            'dimension': int(dim), 'tag': int(tag),
+            'type': model.getType(dim, tag), 'name': model.getEntityName(dim, tag),
+            'bounds': list(map(float, model.getBoundingBox(dim, tag))),
+            'boundary': [[dim - 1, int(t)] for t in sorted(set(downward))],
+            'upward': [[dim + 1, int(t)] for t in sorted(set(upward))],
+            'groups': [g['tag'] for g in groups if g['dimension'] == dim and tag in g['entities']],
+        })
+    return records
+
+
 def load_geometry(filename):
     import gmsh
     path = Path(filename).resolve()
@@ -31,6 +47,7 @@ def load_geometry(filename):
         groups = [{"dimension": d, "tag": t, "name": gmsh.model.getPhysicalName(d, t),
                    "entities": list(map(int, gmsh.model.getEntitiesForPhysicalGroup(d, t)))}
                   for d, t in gmsh.model.getPhysicalGroups()]
+        topology = extract_topology(gmsh.model, groups)
         entities = []
         for dim, tag in [*faces, *edges]:
             vertices = []
@@ -56,12 +73,15 @@ def load_geometry(filename):
                              "boundary": [list(e) for e in gmsh.model.getBoundary([(dim, tag)], oriented=False)],
                              "groups": [g["tag"] for g in groups if g["dimension"] == dim and tag in g["entities"]],
                              "positions": vertices})
-        return {"document": uuid4().hex, "source": str(path), "name": path.name,
+        geometry = {"document": uuid4().hex, "source": str(path), "name": path.name,
                 "dimension": 3 if gmsh.model.getEntities(3) or source_format != "geo" else 2,
                 "source_format": source_format, "solid_count": len(gmsh.model.getEntities(3)),
                 "coordinate_units": "Source geometry units (unspecified)",
                 "source_hash": hashlib.sha256(path.read_bytes()).hexdigest(),
-                "entities": entities, "groups": groups}
+                "entities": entities, "groups": groups, "topology": topology}
+        from .topology import validate_topology
+        validate_topology(geometry)
+        return geometry
     finally:
         gmsh.finalize()
 

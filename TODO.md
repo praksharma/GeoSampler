@@ -135,9 +135,9 @@ for BREP, STEP and IGES. Start there without introducing a second geometry backe
       and sampling workers, so a file can both render and generate valid samples.
 - [x] Update file filters, CLI help, errors and documentation with actual supported
       extensions; validate contents and handle malformed/unsupported files clearly.
-- [ ] Keep `.geo` and both Gmsh kernels working; do not require conversion to OCC
+- [x] Keep `.geo` and both Gmsh kernels working; do not require conversion to OCC
       or assume built-in-kernel scripts can be converted losslessly to STEP.
-- [ ] Expose vertices, edges, faces, solids and adjacency consistently in the
+- [x] Expose vertices, edges, faces, solids and adjacency consistently in the
       backend model; keep tessellation separate from authoritative CAD geometry.
 - [ ] Detect source units and coordinate scale where available; retain original
       units/metadata and explicitly record any requested conversion.
