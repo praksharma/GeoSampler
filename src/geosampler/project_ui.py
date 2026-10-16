@@ -11,7 +11,7 @@ from .project import save_project, load_project
 
 class ProjectActions:
     def project_busy(self):
-        return self.sampling.process or self.import_process or self.parametrisation_dialog
+        return self.sampling.process or self.import_process or self.parametrisation_dialog or self.boundary_dialog
 
     def refresh_project_actions(self):
         busy=bool(self.project_busy())
@@ -31,6 +31,7 @@ class ProjectActions:
                             'count':panel.count.value(),'seed':panel.seed.value(),'label':panel.label.text(),
                             'resolution':panel.resolution.currentData(),'compute_mode':panel.compute_mode.currentData(),
                             'cpu_threads':panel.cpu_threads.value()},
+                'boundary_regions':deepcopy(self.boundary_regions),
                 'parametrisation':deepcopy(self.parametrisation_setup),
                 'layout':bytes(self.saveState()).hex(),'camera':camera}
 
@@ -86,6 +87,8 @@ class ProjectActions:
             state=manifest['state']
             old_cache=self.project_cache
             self.show_geometry(geometry)
+            self.boundary_regions = state.get('boundary_regions', [])
+            self.refresh_boundary_regions()
             self.project_cache=cache
             self.project_path=Path(filename)
             if old_cache is not None:old_cache.cleanup()

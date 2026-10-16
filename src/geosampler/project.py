@@ -7,6 +7,7 @@ import numpy as np
 from .cad_import import FORMATS
 from .sampling_methods import METHODS
 from .topology import validate_topology
+from .regions import validate_regions
 from .export import atomic_write, to_xarray
 
 
@@ -14,6 +15,7 @@ def save_project(path, geometry, areas, state):
     if not geometry:
         raise ValueError('Open geometry before saving a project.')
     validate_topology(geometry)
+    validate_regions(state.get('boundary_regions', []), geometry)
     source = Path(geometry['source'])
     data = source.read_bytes()
     if hashlib.sha256(data).hexdigest() != geometry['source_hash']:
@@ -104,6 +106,15 @@ def load_project(path):
 def validate_state(geometry, areas, state):
     """Reject corrupt UI recipes before any widgets or current data are replaced."""
     validate_topology(geometry)
+    regions = state.get('boundary_regions', [])
+    validate_regions(regions, geometry)
+    for record in areas:
+        area = record['area']
+        if 'boundary_region' in area:
+            snapshot = area['boundary_region']
+            validate_regions([snapshot], geometry)
+            if sorted(snapshot['entities']) != sorted(area['entities']):
+                raise ValueError('Saved boundary region differs from sampling target.')
     if not isinstance(geometry['source'],str) or not isinstance(geometry['name'],str) or geometry['dimension'] not in (2,3):
         raise ValueError('Invalid geometry metadata.')
     for entity in geometry['entities']:
@@ -142,6 +153,9 @@ def validate_state(geometry, areas, state):
         if type(controls[field]) is not int or not low<=controls[field]<=high:raise ValueError('Invalid sampling '+field)
     if not isinstance(controls['label'],str):raise ValueError('Invalid next dataset label.')
     if controls['target'] not in ('selection','interior') and not isinstance(controls['target'],dict):raise ValueError('Invalid target.')
+    if isinstance(controls['target'], dict) and 'region_id' in controls['target']:
+        if controls['target']['region_id'] not in {r['id'] for r in regions}:
+            raise ValueError('Saved sampling target references a missing boundary region.')
     camera=state.get('camera')
     if camera:
         for key in ('position','target','up'):

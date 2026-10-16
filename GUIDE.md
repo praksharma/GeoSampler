@@ -384,6 +384,41 @@ generation. Hidden/isolation state and coordinates survive renaming. Exports use
 the new labels and include each region's colour in its metadata. Canceling either
 dialog leaves the region unchanged. These display choices are included when saving a project.
 
+### User-defined boundary regions
+
+Open geometry, select faces or edges, then click **Boundary regions…** below the
+geometry tree. Use **New from current selection**, enter a non-empty region
+label, choose a colour, check the desired entities and click **Save region**.
+A region contains multiple faces or multiple edges; mixing dimensions in one
+region is rejected. Labels support spaces, Unicode and slashes. Region labels
+are unique among boundary definitions and are independent of dataset labels.
+Selecting an existing region lets you rename it, change membership/colour,
+select its saved entities in the viewport, or delete its assignment. Closing the
+editor discards unsaved form edits; saved edits take effect immediately.
+
+Regions are metadata on prepared CAD, not geometry partitions or physics values.
+An entity can belong to several regions. Each region samples independently, so
+overlapping regions may yield overlapping point clouds; no deduplication or
+single-owner rule is implied. Shared entities display the first-created region's
+colour, with hover/selection highlights taking precedence. Unlabelled entities
+remain selectable and can be sampled through the normal selection target.
+
+Choose **Region: <label>** in Sampling to generate from its current members.
+Each generated dataset stores an immutable `boundary_region` snapshot with the
+region's identifier, label, colour, members, document, source format and source
+hash. Renaming/deleting a definition does not rename a dataset or change its
+existing samples/provenance. Editing a sampled area's recipe manually makes it
+an explicit selection target instead of silently retaining an obsolete binding.
+NetCDF and NPZ metadata preserve the snapshot.
+
+Full projects preserve region definitions and the chosen region sampling target,
+including when the original CAD file has moved. Hash checks reject changed source
+files before sampling or project saving; loaded assignments must reference the
+saved document and valid entities. A successful new geometry import clears region
+assignments rather than guessing that numeric tags still identify the same CAD.
+Failed imports preserve the current assignments and datasets. Legacy projects
+without boundary definitions open with an empty list.
+
 ### Parametrisation: first translation slice
 
 Generate normal boundary/interior samples, then click **Parametrisation…** below

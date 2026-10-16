@@ -77,12 +77,12 @@ Acceptance checks:
 
 ## 4. User-defined boundary regions
 
-- [ ] Create, rename and delete arbitrary region labels.
-- [ ] Assign multiple selected faces or edges to a region.
-- [ ] Colour regions and inspect their constituent entities.
-- [ ] Keep unlabelled entities available for selection and sampling.
-- [ ] Define and document overlapping-region membership behaviour.
-- [ ] Save/reopen geometry references and region assignments; detect changed
+- [x] Create, rename and delete arbitrary region labels.
+- [x] Assign multiple selected faces or edges to a region.
+- [x] Colour regions and inspect their constituent entities.
+- [x] Keep unlabelled entities available for selection and sampling.
+- [x] Define and document overlapping-region membership behaviour.
+- [x] Save/reopen geometry references and region assignments; detect changed
       source geometry instead of silently trusting old entity tags.
 
 ## 5. First end-to-end sampling release
@@ -152,7 +152,7 @@ for BREP, STEP and IGES. Start there without introducing a second geometry backe
       from Gmsh physical groups; expose what actually survived translation.
 - [ ] Preserve supplied boundary partitions without claiming topology preservation
       guarantees face names, simulation BC labels or persistent numeric IDs.
-- [ ] Let users assign region labels to multiple faces/edges when CAD names are
+- [x] Let users assign region labels to multiple faces/edges when CAD names are
       absent; separate these assignments from generated dataset labels.
 - [ ] Track source hash, format and import options in saved projects and exports;
       invalidate/remap region references explicitly after reimport or healing.

@@ -47,6 +47,7 @@ class Viewport(QWidget):
         self.geometry = None
         self.samples = {"batches": [], "visible": True, "through": True, "size": 7}
         self.translation_preview = None
+        self.boundary_regions = []
         self.camera_state = None
         self.selection = []
         self.mode = "face"
@@ -104,6 +105,7 @@ class Viewport(QWidget):
     def flush_geometry(self):
         if self.geometry:
             self.call("loadGeometry", self.geometry)
+        self.call("setBoundaryRegions", self.boundary_regions)
         self.call("setMode", self.mode)
         self.call("setSelection", self.selection)
         self.call("setSamples", self.samples)
@@ -127,6 +129,10 @@ class Viewport(QWidget):
     def set_sample_style(self, style):
         self.samples.update(style)
         self.call("setSampleStyle", style)
+
+    def set_boundary_regions(self, regions):
+        self.boundary_regions = regions
+        self.call('setBoundaryRegions', regions)
 
     def set_translation_preview(self, setup):
         self.translation_preview = setup

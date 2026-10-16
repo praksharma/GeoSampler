@@ -129,6 +129,12 @@ class SamplingPanel(QWidget):
 
     def geometry_loaded(self):
         self.clear_batches()
+        self.refresh_targets()
+        self.generate.setEnabled(True)
+        self.summary.setText('Select a target and generate a dataset.')
+
+    def refresh_targets(self):
+        current = self.target.currentData()
         self.target.blockSignals(True)
         while self.target.count() > 2:
             self.target.removeItem(2)
@@ -137,9 +143,11 @@ class SamplingPanel(QWidget):
                 kind = 'edges' if group['dimension'] == 1 else 'faces'
                 name = group['name'] or f"Group {group['tag']}"
                 self.target.addItem(f'{name} ({kind})', {'dimension': group['dimension'], 'tags': group['entities']})
+        for region in self.window.boundary_regions:
+            self.target.addItem('Region: ' + region['label'], {'region_id': region['id']})
+        index = next((i for i in range(self.target.count()) if self.target.itemData(i) == current), 0)
+        self.target.setCurrentIndex(index)
         self.target.blockSignals(False)
-        self.generate.setEnabled(True)
-        self.summary.setText('Select a target and generate a dataset.')
 
     def set_busy(self, busy):
         for control in (self.target, self.method, self.count, self.seed, self.label, self.resolution, self.compute_mode, self.cpu_threads):
@@ -170,7 +178,16 @@ class SamplingPanel(QWidget):
         if self.process or not self.window.geometry or self.window.import_process:
             return
         target = self.target.currentData()
-        if isinstance(target, dict):
+        snapshot = None
+        if isinstance(target, dict) and 'region_id' in target:
+            from .regions import region_snapshot
+            try:
+                snapshot = region_snapshot(self.window.boundary_regions, self.window.geometry, target['region_id'])
+            except ValueError as error:
+                QMessageBox.warning(self, 'Boundary region', str(error))
+                return
+            entities, kind = snapshot['entities'], 'region'
+        elif isinstance(target, dict):
             entities = [[target['dimension'], t] for t in target['tags']]
             kind = 'group'
         else:
@@ -191,6 +208,8 @@ class SamplingPanel(QWidget):
                        count=self.count.value(), seed=self.seed.value(), label=label,
                        resolution=self.resolution.currentData(),compute_mode=self.compute_mode.currentData(),
                        cpu_threads=self.cpu_threads.value() if self.compute_mode.currentData()=='multicore' else 1)
+        if snapshot is not None:
+            request['boundary_region'] = snapshot
         self.generate_request(request)
 
     def generate_request(self, request, replace_label=None):

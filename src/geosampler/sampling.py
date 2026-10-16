@@ -305,7 +305,7 @@ def sample_geometry(request):
             notes.append('Sobol designs have their strongest balance properties at power-of-two counts.')
         if mode=='multicore':
             notes.append('Multicore meshing can change the numerical mesh and coordinates across runs or thread counts; use Reproducible mode for repeatable meshes.')
-        return {'document': request['document'], 'label': request['label'], 'target': request['target'],
+        result = {'document': request['document'], 'label': request['label'], 'target': request['target'],
                 'entities': [[dim, t] for t in tags], 'method': method, 'seed': seed,
                 'requested_count': count, 'count': len(points), 'coordinates': points.tolist(),
                 'entity_tags': point_tags.astype(int).tolist(), 'entity_dimension': dim,
@@ -313,6 +313,16 @@ def sample_geometry(request):
                 'resolution': request.get('resolution', 32), 'compute_mode':mode,
                 'cpu_threads':threads, 'mesh_algorithm_2d':int(gmsh.option.getNumber('Mesh.Algorithm')),
                 'mesh_algorithm_3d':int(gmsh.option.getNumber('Mesh.Algorithm3D'))}
+        if 'boundary_region' in request:
+            from .regions import validate_regions
+            snapshot = request['boundary_region']
+            model = {'source_hash': digest, 'document': request['document'], 'source_format': source_format,
+                     'entities': [{'dimension': d, 'tag': t} for d, t in gmsh.model.getEntities()]}
+            validate_regions([snapshot], model)
+            if sorted(snapshot['entities']) != sorted(result['entities']):
+                raise ValueError('Boundary region differs from the sampling target.')
+            result['boundary_region'] = snapshot
+        return result
     finally:
         gmsh.finalize()
 

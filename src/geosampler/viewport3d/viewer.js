@@ -23,6 +23,15 @@ let objects=[],faces=[],edges=[],documentId='',mode='face',selected=new Set(),ho
 let center=new THREE.Vector3(),radius=15,down=null;
 const raycaster=new THREE.Raycaster();
 const key=o=>`${o.userData.dimension}:${o.userData.tag}`;
+let boundaryColours=new Map();
+function setBoundaryRegions(regions){
+  boundaryColours=new Map();
+  for(const region of regions)for(const entity of region.entities){
+    const id=`${entity[0]}:${entity[1]}`;
+    if(!boundaryColours.has(id))boundaryColours.set(id,region.colour);
+  }
+  recolor();
+}
 let palette={face:0x75a8b5,edge:0x304650};
 let sampleObjects=[];
 let translationPreview=null,previewOffset=new THREE.Vector3();
@@ -69,7 +78,7 @@ function orient(index){
 function recolor(){
   for(const object of objects){
     const id=key(object),isSelected=selected.has(id),isHovered=hover===id;
-    const color=isSelected?0xe89a34:isHovered?0x41c4b8:object.userData.dimension===2?palette.face:palette.edge;
+    const color=isSelected?0xe89a34:isHovered?0x41c4b8:(boundaryColours.get(id)??(object.userData.dimension===2?palette.face:palette.edge));
     object.material.color.set(color);
     const highlight=object.userData.highlight;
     if(highlight){
@@ -186,9 +195,9 @@ function diagnostics(){
   const gl=renderer.getContext(),extension=gl.getExtension('WEBGL_debug_renderer_info');
   return {renderer:gl.getParameter(extension?extension.UNMASKED_RENDERER_WEBGL:gl.RENDERER),
     vendor:gl.getParameter(extension?extension.UNMASKED_VENDOR_WEBGL:gl.VENDOR),
-    version:gl.getParameter(gl.VERSION),lost:gl.isContextLost(),visibleFaces:faces.filter(o=>o.visible).length,visibleEdges:edges.filter(o=>o.visible).length,sampleColours:Object.fromEntries(sampleObjects.map(o=>[o.userData.label,`#${o.material.color.getHexString()}`])),preview:translationPreview,sampleOffsets:Object.fromEntries(sampleObjects.map(o=>[o.userData.label,o.position.toArray()])),geometryOffset:previewOffset.toArray(),selectionCount:selected.size,pointSize:sampleStyle.size,sampleVisible:sampleStyle.visible,visibleSampleCount:sampleObjects.reduce((n,o)=>n+(o.visible?o.geometry.attributes.position.count:0),0),sampleCount:sampleObjects.reduce((n,o)=>n+o.geometry.attributes.position.count,0)};
+    entityColours:Object.fromEntries(objects.map(o=>[key(o),`#${o.material.color.getHexString()}`])),version:gl.getParameter(gl.VERSION),lost:gl.isContextLost(),visibleFaces:faces.filter(o=>o.visible).length,visibleEdges:edges.filter(o=>o.visible).length,sampleColours:Object.fromEntries(sampleObjects.map(o=>[o.userData.label,`#${o.material.color.getHexString()}`])),preview:translationPreview,sampleOffsets:Object.fromEntries(sampleObjects.map(o=>[o.userData.label,o.position.toArray()])),geometryOffset:previewOffset.toArray(),selectionCount:selected.size,pointSize:sampleStyle.size,sampleVisible:sampleStyle.visible,visibleSampleCount:sampleObjects.reduce((n,o)=>n+(o.visible?o.geometry.attributes.position.count:0),0),sampleCount:sampleObjects.reduce((n,o)=>n+o.geometry.attributes.position.count,0)};
 }
-window.geoViewer={cameraState,setCameraState,setTranslationPreview,orient,appearance,loadGeometry,setMode,setSelection,setGeometryVisibility,setSamples,setSampleStyle,diagnostics,reset:()=>orient(0)};
+window.geoViewer={setBoundaryRegions,cameraState,setCameraState,setTranslationPreview,orient,appearance,loadGeometry,setMode,setSelection,setGeometryVisibility,setSamples,setSampleStyle,diagnostics,reset:()=>orient(0)};
 renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();window.geoReportFailure('Graphics context lost. Restart the application.');});
 addEventListener('resize',resize);resize();appearance({canvas:'#fafcfc',grid:'#e2e7e8',showGrid:false,showAxes:true});orient(0);setMode('face');
 const clock=new THREE.Clock();renderer.setAnimationLoop(()=>{gizmo.update(clock.getDelta());controls.update();renderer.clear();renderer.render(scene,camera);gizmo.render();});

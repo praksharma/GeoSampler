@@ -27,6 +27,8 @@ class MainWindow(ProjectActions, QMainWindow):
         self.project_path = None
         self.project_cache = None
         self.parametrisation_setup = None
+        self.boundary_regions = []
+        self.boundary_dialog = None
         self.import_process = None
         self.selection = set()
         self.selected_area = None
@@ -136,6 +138,9 @@ class MainWindow(ProjectActions, QMainWindow):
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.addWidget(self.left_splitter)
+        self.boundary_button = QPushButton('Boundary regions…')
+        self.boundary_button.clicked.connect(self.open_boundary_regions)
+        sidebar_layout.addWidget(self.boundary_button)
         self.parametrisation_button = QPushButton('Parametrisation…')
         self.parametrisation_button.setToolTip('Configure, preview and export translations of sampled datasets')
         self.parametrisation_button.clicked.connect(self.open_parametrisation)
@@ -179,6 +184,27 @@ class MainWindow(ProjectActions, QMainWindow):
             self.restoreState(self.settings.value("layout"))
         self.refresh_icons()
         self.refresh_project_actions()
+
+    def open_boundary_regions(self):
+        if self.project_busy() or not self.geometry:
+            return
+        from .regions_panel import BoundaryRegionsDialog
+        self.boundary_dialog = BoundaryRegionsDialog(self)
+        self.boundary_dialog.finished.connect(self.finish_boundary_regions)
+        self.open_action.setEnabled(False)
+        self.refresh_project_actions()
+        self.boundary_dialog.open()
+
+    def finish_boundary_regions(self):
+        dialog, self.boundary_dialog = self.boundary_dialog, None
+        self.open_action.setEnabled(True)
+        self.refresh_project_actions()
+        if dialog is not None: dialog.deleteLater()
+
+    def refresh_boundary_regions(self):
+        self.view.set_boundary_regions(self.boundary_regions)
+        self.sampling.refresh_targets()
+        if self.geometry: self.update_selection()
 
     def open_parametrisation(self):
         if self.sampling.process or self.import_process:
@@ -535,6 +561,8 @@ class MainWindow(ProjectActions, QMainWindow):
 
     def show_geometry(self, geometry):
         self.geometry = geometry
+        self.boundary_regions = []
+        self.view.set_boundary_regions([])
         self.refresh_project_actions()
         self.project_path = None
         self.parametrisation_setup = None
@@ -631,9 +659,14 @@ class MainWindow(ProjectActions, QMainWindow):
             if (entity["dimension"], entity["tag"]) in self.selection:
                 kind = "Face" if entity["dimension"] == 2 else "Edge"
                 lines.append(f"\n{kind} {entity['tag']}\nType: {entity['type']}\nGroups: {', '.join(map(str, entity['groups'])) or 'None'}")
+        for region in self.boundary_regions:
+            if self.selection & {tuple(e) for e in region['entities']}:
+                lines.append('Boundary region: ' + region['label'])
         self.properties.setText("\n".join(lines))
 
     def closeEvent(self, event):
+        if self.boundary_dialog is not None:
+            self.boundary_dialog.reject()
         if self.parametrisation_dialog is not None:
             self.parametrisation_dialog.reject()
         self.sampling.shutdown()
