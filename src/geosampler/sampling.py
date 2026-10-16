@@ -284,11 +284,12 @@ def sample_geometry(request):
             gmsh.model.mesh.generate(dim)
             gmsh.model.mesh.setOrder(1)
         if dim == 1:
-            if source_format != 'geo':
+            occ_edges = set(gmsh.model.occ.getEntities(1))
+            if occ_edges:
                 bounds = gmsh.model.getBoundingBox(-1, -1)
                 scale = max(bounds[i+3]-bounds[i] for i in range(3))
                 for tag in tags:
-                    if gmsh.model.occ.getMass(1, tag) <= max(scale, 1e-12)*1e-12:
+                    if (1, tag) in occ_edges and gmsh.model.occ.getMass(1, tag) <= max(scale, 1e-12)*1e-12:
                         raise ValueError(f'Edge {tag} is a degenerate CAD edge with zero length; choose another edge.')
             points, point_tags, notes = _edge_samples(gmsh, tags, method, count, seed)
         elif dim == 2:
@@ -305,6 +306,10 @@ def sample_geometry(request):
             notes.append('Sobol designs have their strongest balance properties at power-of-two counts.')
         if mode=='multicore':
             notes.append('Multicore meshing can change the numerical mesh and coordinates across runs or thread counts; use Reproducible mode for repeatable meshes.')
+        from .normals import boundary_normals
+        normal_data = boundary_normals(gmsh, dim, points, point_tags, request['target'])
+        if normal_data['normal_status'] == 'unavailable':
+            notes.append(normal_data['normal_note'])
         result = {'document': request['document'], 'label': request['label'], 'target': request['target'],
                 'entities': [[dim, t] for t in tags], 'method': method, 'seed': seed,
                 'requested_count': count, 'count': len(points), 'coordinates': points.tolist(),
@@ -313,6 +318,7 @@ def sample_geometry(request):
                 'resolution': request.get('resolution', 32), 'compute_mode':mode,
                 'cpu_threads':threads, 'mesh_algorithm_2d':int(gmsh.option.getNumber('Mesh.Algorithm')),
                 'mesh_algorithm_3d':int(gmsh.option.getNumber('Mesh.Algorithm3D'))}
+        result.update(normal_data)
         if 'boundary_region' in request:
             from .regions import validate_regions
             snapshot = request['boundary_region']

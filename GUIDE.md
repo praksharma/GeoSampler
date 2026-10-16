@@ -38,7 +38,7 @@ from PyniteGUI are excluded. Keep future CAD and sampling services independent o
 - No CAD editing, boundary partitioning, BC-value assignment, or PDE solver.
 - Sample interiors and individual boundary regions; include normals where applicable.
 - Primary Python interface: xarray Dataset, persisted as NetCDF. Alternative: named
-  NumPy arrays in NPZ. No Parquet. Final dataset schema remains to be implemented.
+  NumPy arrays in NPZ. No Parquet. Exports use a versioned dataset schema.
 - Preserve seeds, geometry references and sampling settings for reproducibility.
 - Validate containment, surface distributions, normals, and labels before release.
 
@@ -174,6 +174,34 @@ than the budget. Multi-face grids divide the budget equally between faces.
 Other methods return the requested count. Curves use a length-weighted entity
 allocation; random surface and volume sampling are area/volume weighted.
 
+### Boundary normals
+
+Boundary sampling evaluates derivatives on the original geometry and returns
+finite unit `normals` when every point's outward orientation can be checked.
+Faces bounding exactly one solid receive `outward_surface` normals. Edges
+bounding one planar face receive in-plane `outward_conormal` vectors; hole
+boundaries point into the hole. Interior samples and 3D edges have no unique
+outward boundary normal. Open faces and shared interfaces do not receive guessed
+orientations. If a derivative, parent domain or containment check is ambiguous,
+the whole dataset omits normals and records `normal_status` and `normal_note`.
+Properties and Sampled Areas show this availability.
+
+Orientation probes test both sides of each evaluated normal using parent-domain
+containment. Built-in volumes use a separate tetrahedral mesh because Gmsh does
+not implement direct volume containment for that kernel. Probe distances range
+from 1e-6 to 1e-2 of the parent extent to account for CAD/mesh tolerances; the first
+unambiguous result determines the sign. These are numerical checks, not a proof
+for arbitrary thin or invalid CAD. Broader containment validation and certified
+sampling bounds remain open release work. Normals do not alter point coordinates.
+
+Export schema **2** stores each available normal array under the manifest's
+`normals` key, with shape `(point, xyz)` alongside its coordinate array. In xarray,
+use `ds[ds[label].attrs['normals_coordinate']]`; in NPZ, load the key named by the
+region manifest. `normal_kind`, `normal_status` and `normal_validation` remain
+in metadata; numeric normals are not repeated in JSON. Project schema **2** also
+stores normals as numeric arrays and continues to read schema-1 projects.
+Malformed, non-finite, non-unit or missing advertised normal arrays are rejected.
+
 ### Previews and generation lifecycle
 
 Points use circular markers with dark outlines, starting with warm white for
@@ -188,7 +216,7 @@ process, with cancellation; errors retain previous datasets. Geometry replacemen
 clears datasets. If the source geometry file changes, reopen it before sampling.
 Metadata includes source SHA-256, target entities, method, seed, requested/actual
 counts, accuracy and approximation notes. Export saves the current datasets;
-saved application configurations and normals remain future work.
+full projects preserve application configurations, samples and applicable normals.
 
 Validation covers all methods on curves, 2D and 3D interiors; reproducibility;
 unit-design properties; annulus containment and area coverage; sphere surface
@@ -212,8 +240,8 @@ Each label is one float64 coordinate array of shape `(N, 3)`, in `x, y, z` order
 Different labels have independent point dimensions (`_gs_points_0`, etc.), so
 unequal point counts never produce padding or NaNs. Entity tags are int32 arrays
 with one tag per point. Coordinates retain source geometry units; the importer
-does not currently identify or convert those units. Normals are not yet generated
-or exported. Export is a data snapshot, not a saved editable application project.
+does not currently identify or convert those units. Applicable normals are
+exported as separate numeric arrays. Export is a data snapshot, not a saved editable application project.
 
 Common identifier labels such as `boundary`, `boundary_1`, and `interior` are
 array names in both formats. Labels containing spaces, punctuation or Unicode,
@@ -225,7 +253,7 @@ No user label is silently lost or changed in the metadata.
 The xarray interface is `geosampler.export.to_xarray(batches)`. NetCDF is written
 through xarray's SciPy engine as NetCDF3 64-bit offset, using the existing SciPy
 dependency. The Dataset has only coordinate arrays as data variables; `xyz` and
-`_gs_entity_tags_N` are coordinates. Per-variable attributes include `label`,
+`_gs_entity_tags_N` and optional `_gs_normals_N` arrays are coordinates. Per-variable attributes include `label`,
 `method`, `seed`, `entity_dimension`, `entity_tags_coordinate`, and
 `metadata_json`. The latter preserves all generation metadata, including target
 entities, source path/SHA-256, document identity, requested/actual counts,
@@ -242,7 +270,8 @@ with xr.open_dataset('samples.nc', engine='scipy') as ds:
     metadata = json.loads(ds['boundary'].attrs['metadata_json'])
 ```
 
-NPZ uses the same coordinate array names, plus `xyz`, `_gs_entity_tags_N`, and
+NPZ uses the same coordinate array names, plus `xyz`, `_gs_entity_tags_N`,
+optional `_gs_normals_N`, and
 `_gs_metadata` (a Unicode scalar containing JSON). It contains no Python objects
 and loads with `allow_pickle=False`. Its manifest maps each original label to
 its coordinate and entity-tag array names and retains generation metadata.
@@ -436,7 +465,7 @@ preview is marked as out of date until Preview configuration is clicked again.
 **Selected regions** translates only checked clouds and leaves CAD fixed; its
 boundary/interior consistency is explicitly unverified. Translation does not
 modify the source CAD file. Existing normals, if present in input metadata, are
-unchanged by translation; generating normals is still future work.
+unchanged by translation.
 
 Preview uses object offsets from originals and is reversible, including repeated
 previews and switching scopes. Restore, Close and Escape return to original

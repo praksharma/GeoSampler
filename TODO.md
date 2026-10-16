@@ -94,7 +94,8 @@ Acceptance checks:
 - [x] Save per-region recipes in projects and edit/regenerate existing areas.
 - [x] Sampling previews.
 - [x] Live point-size slider, outlined high-contrast markers and scrollable sampling controls.
-- [ ] Outward normals where applicable.
+- [x] Outward normals where applicable: oriented surface normals for single-parent
+      solids and co-normals for planar boundaries, with explicit unavailable states.
 - [x] Reference-fixture boundary membership, coverage and interior checks.
 - [ ] Validate arbitrary CAD trimming/containment and normal orientation; add
       certified surface sampling bounds and mesh-convergence checks.
@@ -102,7 +103,8 @@ Acceptance checks:
       arrays in NPZ. No Parquet.
 - [x] Versioned export schema for coordinates, dataset labels, per-point entity
       tags and reproducibility metadata; round-trip NetCDF and NPZ checks.
-- [ ] Add applicable normals to exports after normal generation is implemented.
+- [x] Add applicable normals to exports as finite per-point numeric arrays;
+      preserve them in projects and through translation.
 - [x] Save/load full sampling configurations and regenerate datasets.
 - [ ] Installation validation, examples and release documentation.
 

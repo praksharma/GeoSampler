@@ -26,12 +26,12 @@ def save_project(path, geometry, areas, state):
     for area, status, visible in areas:
         if status == 'Generating':
             raise ValueError('Wait for generation to finish before saving.')
-        records.append({'area': {k:v for k,v in area.items() if k not in ('coordinates','entity_tags')},
-                        'status':status,'visible':visible})
+        records.append({'area': {k:v for k,v in area.items() if k not in ('coordinates','entity_tags','normals')},
+                        'status':status,'visible':visible,'has_normals':status == 'Generated' and 'normals' in area})
     generated = [area for area, status, _ in areas if status == 'Generated']
     if generated:
         dataset=to_xarray(generated);dataset.close()
-    manifest={'schema_version':1,'geometry':metadata,'areas':records,'state':state,
+    manifest={'schema_version':2,'geometry':metadata,'areas':records,'state':state,
               'source_extension':source.suffix.lower()}
     def write(temporary):
         with zipfile.ZipFile(temporary,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=3) as archive:
@@ -46,6 +46,8 @@ def save_project(path, geometry, areas, state):
                 if status=='Generated':
                     array(f'areas/{i}_coordinates.npy',np.asarray(area['coordinates'],dtype=np.float64))
                     array(f'areas/{i}_tags.npy',np.asarray(area['entity_tags'],dtype=np.int32))
+                    if 'normals' in area:
+                        array(f'areas/{i}_normals.npy',np.asarray(area['normals'],dtype=np.float64))
     atomic_write(path,write)
 
 
@@ -53,7 +55,7 @@ def load_project(path):
     """Fully validate before returning a candidate; never mutate the active project."""
     with zipfile.ZipFile(path) as archive:
         manifest=json.loads(archive.read('manifest.json'))
-        if manifest.get('schema_version') != 1:
+        if manifest.get('schema_version') not in (1, 2):
             raise ValueError('Unsupported GeoSampler project version.')
         extension=manifest['source_extension']
         if extension not in FORMATS:
@@ -90,6 +92,10 @@ def load_project(path):
             if status=='Generated':
                 area['coordinates']=array(f'areas/{i}_coordinates.npy').tolist()
                 area['entity_tags']=array(f'areas/{i}_tags.npy').tolist()
+                if type(record.get('has_normals', False)) is not bool:
+                    raise ValueError('Invalid saved normal availability.')
+                if record.get('has_normals'):
+                    area['normals']=array(f'areas/{i}_normals.npy').tolist()
                 if area['entity_dimension'] != 3 and not {tuple(e) for e in area['entities']}<=keys:
                     raise ValueError('Region references missing geometry entities.')
                 batches.append(area)

@@ -9,6 +9,7 @@ import numpy as np
 import xarray as xr
 
 from . import __version__
+from .normals import validate_normals
 
 _PREFIX = '_gs_'
 _RESERVED = {'xyz', 'file', 'allow_pickle', 'like'}
@@ -54,7 +55,7 @@ def to_xarray(batches):
                          and not label.startswith(_PREFIX) and label not in _RESERVED) else f'{_PREFIX}region_{index}'
         point_dim = f'{_PREFIX}points_{index}'
         tag_name = f'{_PREFIX}entity_tags_{index}'
-        metadata = {key: value for key, value in batch.items() if key not in ('coordinates', 'entity_tags')}
+        metadata = {key: value for key, value in batch.items() if key not in ('coordinates', 'entity_tags', 'normals')}
         metadata_json = json.dumps(metadata, ensure_ascii=False, allow_nan=False)
         variables[name] = xr.DataArray(points.copy(), dims=(point_dim, 'xyz'), attrs={
             'label': label, 'method': batch['method'], 'seed': batch['seed'],
@@ -62,12 +63,19 @@ def to_xarray(batches):
             'metadata_json': metadata_json})
         coordinates[tag_name] = xr.DataArray(tags.astype(np.int32), dims=point_dim,
                                             attrs={'entity_dimension': dimension})
-        records.append({'label': label, 'array': name, 'point_dimension': point_dim,
-                        'entity_tags': tag_name, 'metadata': metadata})
-    manifest = {'schema_version': 1, 'geosampler_version': __version__,
+        record = {'label': label, 'array': name, 'point_dimension': point_dim,
+                  'entity_tags': tag_name, 'metadata': metadata}
+        normals = validate_normals(batch)
+        if normals is not None:
+            normal_name = f'{_PREFIX}normals_{index}'
+            coordinates[normal_name] = xr.DataArray(normals.copy(), dims=(point_dim, 'xyz'))
+            variables[name].attrs['normals_coordinate'] = normal_name
+            record['normals'] = normal_name
+        records.append(record)
+    manifest = {'schema_version': 2, 'geosampler_version': __version__,
                 'coordinate_units': 'Source geometry units (unspecified)', 'datasets': records}
     return xr.Dataset(variables, coords=coordinates, attrs={
-        'schema_version': 1, 'geosampler_version': __version__,
+        'schema_version': 2, 'geosampler_version': __version__,
         'coordinate_units': manifest['coordinate_units'],
         'metadata_json': json.dumps(manifest, ensure_ascii=False, allow_nan=False)})
 

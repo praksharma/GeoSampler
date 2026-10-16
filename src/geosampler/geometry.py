@@ -33,6 +33,7 @@ def load_geometry(filename):
     try:
         gmsh.option.setNumber("General.Terminal", 0)
         source_format = open_source(gmsh, path)
+        occ_edges = set(gmsh.model.occ.getEntities(1))
         faces = gmsh.model.getEntities(2)
         edges = gmsh.model.getEntities(1)
         if not faces:
@@ -64,7 +65,7 @@ def load_geometry(filename):
             if not vertices:
                 bounds = gmsh.model.getBoundingBox(-1, -1)
                 scale = max(bounds[i+3] - bounds[i] for i in range(3))
-                degenerate = (dim == 1 and source_format != 'geo'
+                degenerate = (dim == 1 and (dim, tag) in occ_edges
                               and gmsh.model.occ.getMass(dim, tag) <= max(scale, 1e-12) * 1e-12)
                 if not degenerate:
                     raise ValueError(f"Entity ({dim}, {tag}) has no display elements.")
