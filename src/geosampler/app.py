@@ -25,6 +25,8 @@ class MainWindow(ProjectActions, QMainWindow):
         self.settings = settings if settings is not None else QSettings("GeoSampler", "GeoSampler")
         self.geometry = None
         self.project_path = None
+        self.saved_digest = None
+        self.saving_project = False
         self.project_cache = None
         self.parametrisation_setup = None
         self.boundary_regions = []
@@ -207,7 +209,7 @@ class MainWindow(ProjectActions, QMainWindow):
         if self.geometry: self.update_selection()
 
     def open_parametrisation(self):
-        if self.sampling.process or self.import_process:
+        if self.sampling.process or self.import_process or self.saving_project:
             QMessageBox.information(self, 'Parametrisation', 'Wait for current processing to finish.')
             return
         if not self.sampling.batches:
@@ -525,7 +527,7 @@ class MainWindow(ProjectActions, QMainWindow):
             self.load_geometry(path)
 
     def load_geometry(self, path):
-        if self.import_process is not None or self.sampling.process is not None:
+        if self.import_process is not None or self.sampling.process is not None or self.saving_project:
             return
         process = QProcess(self)
         self.import_process = process
@@ -552,6 +554,9 @@ class MainWindow(ProjectActions, QMainWindow):
             if code:
                 raise ValueError(bytes(process.readAllStandardError()).decode(errors="replace")[-2000:] or "Geometry loader could not start.")
             geometry = json.loads(bytes(process.readAllStandardOutput()))
+            if not self.confirm_unsaved_changes():
+                self.statusBar().showMessage('Opening cancelled — current workspace retained')
+                return
             self.show_geometry(geometry)
         except (ValueError, KeyError) as error:
             self.statusBar().showMessage("Import failed — previous geometry retained")
@@ -605,6 +610,7 @@ class MainWindow(ProjectActions, QMainWindow):
         faces = sum(e["dimension"] == 2 for e in geometry["entities"])
         edges = sum(e["dimension"] == 1 for e in geometry["entities"])
         self.statusBar().showMessage(f"{geometry['name']} | {faces} faces · {edges} edges | {self.view.mode.title()} selection")
+        self.mark_project_clean()
 
     def set_selection_mode(self, mode):
         self.view.set_mode(mode)
@@ -665,10 +671,16 @@ class MainWindow(ProjectActions, QMainWindow):
         self.properties.setText("\n".join(lines))
 
     def closeEvent(self, event):
+        if self.saving_project:
+            event.ignore()
+            return
         if self.boundary_dialog is not None:
             self.boundary_dialog.reject()
         if self.parametrisation_dialog is not None:
             self.parametrisation_dialog.reject()
+        if not self.confirm_unsaved_changes():
+            event.ignore()
+            return
         self.sampling.shutdown()
         if self.import_process:
             process = self.import_process

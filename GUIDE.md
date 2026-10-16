@@ -547,6 +547,16 @@ ACIS or proprietary native CAD importer is added.
 
 ### Save and reopen projects
 
+Changes to datasets, boundary assignments, sampling settings and parametrisation
+setups prompt **Save / Discard / Cancel** before replacing the workspace or
+closing. Cancel leaves the current workspace open. Save must complete successfully
+before replacement proceeds; cancelling Save As, changed CAD, invalid data or a
+failed disk write cancels the original replacement/close. Failed imports are
+validated before a replacement prompt, retaining the current workspace. Ordinary
+camera/selection navigation does not make a project dirty. Dataset visibility and
+colour changes do count as content changes. There is no automatic crash recovery
+or autosave yet. Large-project background I/O remains open work.
+
 Use **File → Save project** (`Ctrl+S`) or **Save project as…** (`Ctrl+Shift+S`)
 to write a `.gsproj` archive. **Open project…** (`Ctrl+Shift+O`) restores it;
 **Open Geometry** remains `Ctrl+O`. Dataset export is now `Ctrl+Alt+E`.

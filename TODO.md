@@ -343,4 +343,6 @@ are outside the initial release; use the verified neutral export formats instead
 - [x] Replace edited area only after success; preserve originals on cancellation/failure.
 - [x] Versioned validation, checksums, no pickle, atomic writes and failed-load preservation.
 - [ ] Background project I/O and measured large-project memory/performance checks.
-- [ ] Autosave/recovery and unsaved-change prompts before destructive workspace replacement.
+- [ ] Autosave/recovery.
+- [x] Unsaved-change Save/Discard/Cancel prompts before workspace replacement or
+      closing; cancelled or failed saves retain the current workspace.

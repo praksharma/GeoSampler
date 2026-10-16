@@ -4,14 +4,14 @@ import hashlib
 import json
 from pathlib import Path
 import tempfile
-from PySide6.QtCore import Qt, QByteArray
+from PySide6.QtCore import Qt, QByteArray, QEventLoop
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 from .project import save_project, load_project
 
 
 class ProjectActions:
     def project_busy(self):
-        return self.sampling.process or self.import_process or self.parametrisation_dialog or self.boundary_dialog
+        return self.sampling.process or self.import_process or self.parametrisation_dialog or self.boundary_dialog or self.saving_project
 
     def refresh_project_actions(self):
         busy=bool(self.project_busy())
@@ -35,15 +35,53 @@ class ProjectActions:
                 'parametrisation':deepcopy(self.parametrisation_setup),
                 'layout':bytes(self.saveState()).hex(),'camera':camera}
 
+    def workspace_digest(self):
+        """Compare content/recipes, excluding ordinary viewport navigation."""
+        if not self.geometry: return None
+        state = self.project_state()
+        state = {key: state[key] for key in ('controls', 'boundary_regions', 'parametrisation')}
+        areas = [(area, status, self.sampled_areas.items[label].checkState(0) == Qt.CheckState.Checked)
+                 for label, (area, status) in self.sampled_areas.areas.items()]
+        payload = {'document': self.geometry['document'], 'source_hash': self.geometry['source_hash'],
+                   'state': state, 'areas': areas}
+        digest = hashlib.sha256()
+        for chunk in json.JSONEncoder(sort_keys=True, allow_nan=False).iterencode(payload):
+            digest.update(chunk.encode('utf-8'))
+        return digest.hexdigest()
+
+    def mark_project_clean(self):
+        self.saved_digest = self.workspace_digest()
+
+    def has_unsaved_changes(self):
+        return self.geometry is not None and self.workspace_digest() != self.saved_digest
+
+    def confirm_unsaved_changes(self):
+        if not self.has_unsaved_changes(): return True
+        answer = QMessageBox.question(self, 'Unsaved project changes',
+            'Save your changes before replacing or closing this workspace?',
+            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Save)
+        if answer == QMessageBox.StandardButton.Cancel: return False
+        if answer == QMessageBox.StandardButton.Save:
+            if self.project_busy():
+                QMessageBox.information(self, 'Project busy', 'Finish or cancel processing before saving the project.')
+                return False
+            return self.save_project()
+        return answer == QMessageBox.StandardButton.Discard
+
     def save_project(self, save_as=False):
         if self.project_busy() or not self.geometry:
-            return
+            return False
         path=self.project_path if not save_as else None
         if not path:
             filename,_=QFileDialog.getSaveFileName(self,'Save GeoSampler project',self.geometry['name']+'.gsproj','GeoSampler project (*.gsproj)')
-            if not filename:return
+            if not filename:return False
             path=Path(filename)
             if not path.suffix:path=path.with_suffix('.gsproj')
+        result = []
+        loop = QEventLoop()
+        self.saving_project = True
+        self.refresh_project_actions()
         def write(camera_json):
             try:
                 camera=json.loads(camera_json) if camera_json else None
@@ -53,11 +91,20 @@ class ProjectActions:
                 self.project_path=Path(path)
                 self.setWindowTitle('GeoSampler — '+self.project_path.name)
                 self.statusBar().showMessage('Project saved: '+str(path))
+                self.mark_project_clean()
+                result.append(True)
             except (ValueError,TypeError,OSError,KeyError) as error:
                 QMessageBox.warning(self,'Could not save project',str(error))
+                result.append(False)
+            finally:
+                self.saving_project = False
+                self.refresh_project_actions()
+                loop.quit()
         if self.view.is_ready:
             self.view.web.page().runJavaScript('JSON.stringify(window.geoViewer.cameraState())',write)
         else:write(None)
+        if not result: loop.exec()
+        return bool(result and result[0])
 
     def open_project(self):
         if self.project_busy():return
@@ -69,6 +116,10 @@ class ProjectActions:
         cache=None
         try:
             manifest,source=load_project(filename)
+            dirty = self.has_unsaved_changes()
+            if not self.confirm_unsaved_changes(): return
+            # Saving may have replaced this same file while the prompt was open.
+            if dirty: manifest,source=load_project(filename)
             geometry=manifest['geometry']
             # Retain a valid original path for relative .geo dependencies; otherwise
             # restore the embedded main CAD source without extracting arbitrary paths.
@@ -129,6 +180,7 @@ class ProjectActions:
             if state.get('camera'):self.view.set_camera_state(state['camera'])
             self.setWindowTitle('GeoSampler — '+self.project_path.name)
             self.statusBar().showMessage('Project opened: '+str(filename))
+            self.mark_project_clean()
             if not valid and manifest['source_extension']=='.geo':
                 self.statusBar().showMessage('Project restored. Embedded .geo source is available; external Include/Merge dependencies may need restoring before regeneration.')
         except Exception as error:

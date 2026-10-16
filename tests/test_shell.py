@@ -2,10 +2,11 @@
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, Qt
-from PySide6.QtWidgets import QApplication, QDockWidget, QLabel
+from PySide6.QtWidgets import QApplication, QDockWidget, QLabel, QMessageBox
 from geosampler.app import MainWindow
 from geosampler.theme import configure_theme
 from geosampler.graphics import configure_graphics
@@ -18,6 +19,9 @@ class ShellTest(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
         cls.app.setQuitOnLastWindowClosed(False)
         configure_theme(cls.app, 'light')
+        discard = patch('geosampler.project_ui.QMessageBox.question', return_value=QMessageBox.StandardButton.Discard)
+        discard.start()
+        cls.addClassCleanup(discard.stop)
 
     def wait_for(self, predicate, seconds=25):
         deadline = time.monotonic() + seconds
