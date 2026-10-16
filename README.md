@@ -19,37 +19,30 @@ uv sync
 uv run geosampler
 ```
 
-Open `.geo`, STEP, OCC BREP or IGES with **File → Open Geometry** (Ctrl+O), then **Select faces** (F) or
-**Select edges** (E). Ctrl/Shift-click toggles additional entities; Esc clears.
-Drag to orbit, right-drag to pan, and scroll to zoom. Hover the grouped toolbar
-icons for tooltips; use visibility controls to hide geometry, faces, edges or
-points, or isolate a selected sampled region.
-
-Use **Boundary regions…** to label and colour multiple existing faces or edges.
-Open the **Sampling** tab on the right. Choose selected faces/edges, an imported
-group, a named boundary region, or the domain interior; set the method, count, seed, and dataset label;
-then click **Generate samples**. The **Sampled Areas** tree lists each dataset
-and its details; check or uncheck labels to show or hide their points.
-Right-click faces for visibility controls, or sampled areas to edit, rename and recolour them.
-Use **File → Save project** (`Ctrl+S`) and **Open project…** to resume your work.
-Use **Export samples** in the Sampling pane or File menu to save all datasets
-as NetCDF (default) or NPZ. Each label is an independent coordinate array.
-Use **Parametrisation…** below Sampled Areas to preview/export a translation
-of the whole domain or selected clouds, and save/load its setup.
-Methods: random, regular grid, LHS, Sobol, Halton, Hammersley, and stratified.
-Sampling uses **Multicore** mode by default. Set CPU cores or choose
-**Reproducible** mode when you need repeatable meshing. See the guide for
-performance measurements, numerical geometry accuracy and grid-count behaviour.
-
-Try the included fixture directly:
+Open a fixture directly:
 
 ```sh
-uv run geosampler examples/geometries/cfdbench/sphere_unstructured.geo
+uv run geosampler examples/geometries/cfdbench/annulus_unstructured.geo
 ```
 
-Normal launches use automatic graphics selection, including the NVIDIA/Wayland
-configuration. **Help → Graphics information** shows the actual renderer.
+Select existing faces or edges, save boundary regions, generate datasets in
+**Sampling**, then export NetCDF/NPZ or save a full `.gsproj` workspace.
 For graphics compatibility, try `uv run geosampler --software-rendering`.
+
+## Documentation
+
+Read the [user guide](GUIDE.md), try the [annulus example](examples/sample_annulus.py),
+or preview the searchable Zensical site:
+
+```sh
+uv sync --locked --group docs
+uv run --group docs python scripts/sync_docs.py
+uv run --group docs zensical serve
+```
+
+The site includes setup, geometry, regions, sampling, normals, exports, projects,
+recovery, performance and development instructions. See the
+[documentation workflow](GUIDE.md#documentation-site) for building and updating it.
 
 ## Intended workflow
 

@@ -1,0 +1,49 @@
+name: Documentation
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+      - 'GUIDE.md'
+      - 'TODO.md'
+      - 'THIRD_PARTY.md'
+      - 'LICENSE'
+      - 'scripts/sync_docs.py'
+      - 'zensical.toml'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'GUIDE.md'
+      - 'TODO.md'
+      - 'THIRD_PARTY.md'
+      - 'LICENSE'
+      - 'scripts/sync_docs.py'
+      - 'zensical.toml'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: '3.12'
+      - name: Install documentation tools only
+        run: uv sync --locked --only-group docs
+      - name: Check canonical guide and roadmap pages
+        run: uv run --locked --only-group docs python scripts/sync_docs.py --check
+      - name: Build and validate links
+        run: uv run --locked --only-group docs zensical build --strict

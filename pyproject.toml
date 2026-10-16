@@ -17,3 +17,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/geosampler"]
+
+[dependency-groups]
+docs = [
+    "zensical>=0.0.71",
+]

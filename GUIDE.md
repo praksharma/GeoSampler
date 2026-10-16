@@ -53,6 +53,31 @@ installation checks. Unknown units and assembly metadata remain
 explicit limitations. Full parameter sweeps, rotation/scaling, CAD regeneration
 and licensed translators are later roadmap work, not implemented release claims.
 
+## Installation and first dataset
+
+Use Python 3.12 or newer and [uv](https://docs.astral.sh/uv/). From a checkout:
+
+```sh
+uv sync --locked
+uv run geosampler examples/geometries/cfdbench/annulus_unstructured.geo
+```
+
+1. Select **Edges** (`E`) and click an inner arc. Ctrl/Shift-click adds arcs.
+2. Click **Boundary regions…**, name the selection `inner`, then **Save region**.
+3. In **Sampling**, choose **Region: inner**, **Sobol**, 128 points and a seed.
+4. Click **Generate samples** and inspect the new dataset in **Sampled Areas**.
+5. Choose **Domain interior** to generate a separate interior dataset.
+6. Use **Export samples…** for NetCDF/NPZ, and **Save project** (`Ctrl+S`) to
+   preserve the editable workspace.
+
+A boundary region labels CAD entities; a dataset label names one generated point
+cloud. Region edits do not rewrite previously generated dataset provenance.
+Use **Help → Graphics information** to inspect the renderer. For compatibility,
+try `uv run geosampler --software-rendering`.
+
+The fixture's arc IDs are specific to that geometry. With unfamiliar CAD, inspect
+original faces/edges and confirm domain validity and sampling accuracy first.
+
 ## Desktop foundation
 
 Drag with the left mouse button to orbit; right-drag to pan; scroll to zoom.
@@ -107,6 +132,36 @@ camera changes, theme updates, dock persistence, and graphics errors. Run with a
 desktop display; the test selects software rendering. Headless backend support
 depends on the host graphics stack.
 Check an interactive launch for orbit, zoom, pan, gizmo clicks and dock dragging.
+
+## Documentation site
+
+The documentation site uses [Zensical](https://zensical.org/docs/), installed only
+through the optional `docs` dependency group. Preview it from a checkout:
+
+```sh
+uv sync --locked --group docs
+uv run --group docs python scripts/sync_docs.py
+uv run --group docs zensical serve
+```
+
+Open the local address printed by the preview command. To produce static HTML:
+
+```sh
+uv run --group docs python scripts/sync_docs.py --check
+uv run --group docs zensical build --strict
+```
+
+The build writes ignored output to `site/`. The site uses local theme assets and
+system fonts. A deployment URL is deliberately unset until a hosting destination
+is chosen. The build-only GitHub workflow checks generated pages and strict link
+validation; it does not publish the site.
+
+Keep detailed workflows, architecture, limitations and test instructions in this
+`GUIDE.md`. Edit `TODO.md` for the roadmap and `THIRD_PARTY.md` for attribution.
+`scripts/sync_docs.py` creates the corresponding committed pages under `docs/`;
+do not edit those generated pages directly. Add new guide headings to the script's
+page map so every section remains visible. The check fails on missing, stale or
+unmapped content. Edit `docs/index.md` for the landing page.
 
 ## Provenance
 
@@ -172,7 +227,7 @@ renderer. The software fallback remains available for other machines.
 
 The right dock contains Properties and Sampling tabs. Choose a target:
 selected faces/edges (Ctrl/Shift-click for multiple entities), Domain interior,
-or an imported physical face/edge group. Point count is the total across that
+an imported physical face/edge group, or a saved boundary region. Point count is the total across that
 target, not a count per constituent entity. Each dataset has a unique label.
 After successful generation, the label field automatically suggests the next
 available numbered name: `boundary`, `boundary_1`, `boundary_2`, and so on.
@@ -288,7 +343,7 @@ Cancelling the save dialog leaves datasets untouched. Writes use a temporary fil
 in the destination folder and replace the destination only after a complete write;
 a failed save preserves an existing file.
 
-### Schema version 1
+### Schema version 2
 
 Each label is one float64 coordinate array of shape `(N, 3)`, in `x, y, z` order.
 Different labels have independent point dimensions (`_gs_points_0`, etc.), so
@@ -610,6 +665,16 @@ ACIS or proprietary native CAD importer is added.
 
 ### Save and reopen projects
 
+#### Saving and opening
+
+Use **File → Save project** (`Ctrl+S`) or **Save project as…** (`Ctrl+Shift+S`)
+to write a `.gsproj` archive. **Open project…** (`Ctrl+Shift+O`) restores it;
+**Open Geometry** remains `Ctrl+O`. Dataset export is now `Ctrl+Alt+E`.
+Saving/opening is unavailable during import, generation or an active parametrisation
+workspace; close that workspace first to keep transient previews out of projects.
+
+#### Unsaved changes
+
 Changes to datasets, boundary assignments, sampling settings and parametrisation
 setups prompt **Save / Discard / Cancel** before replacing the workspace or
 closing. Cancel leaves the current workspace open. Save must complete successfully
@@ -617,12 +682,18 @@ before replacement proceeds; cancelling Save As, changed CAD, invalid data or a
 failed disk write cancels the original replacement/close. Failed imports are
 validated before a replacement prompt, retaining the current workspace. Ordinary
 camera/selection navigation does not make a project dirty. Dataset visibility and
-colour changes do count as content changes. Archive reads/writes, validation and content fingerprints use one background
+colour changes do count as content changes.
+
+#### Background file operations
+
+Archive reads/writes, validation and content fingerprints use one background
 worker while Qt keeps processing events. Editing and replacement controls are
 locked during the operation; the viewport remains interactive and an indeterminate
 progress indicator shows file work. Worker errors restore the controls and retain
 existing destinations. Viewport serialisation/restoration can still be expensive
 for large clouds and has not been certified responsive at one million points.
+
+#### Recovery copies
 
 Every two minutes, an idle dirty workspace writes an atomic recovery copy in the
 application data `recovery` directory (beside settings for explicit INI profiles).
@@ -630,6 +701,8 @@ Unchanged copies are skipped. Autosave never changes the normal project path,
 marks the workspace saved, regenerates geometry, or overwrites the user's project.
 Source/hash failures retain the previous recovery copy and show a status message.
 Active import/generation, editors and project jobs postpone recovery writes.
+
+#### Recover an interrupted session
 
 On startup, abandoned copies offer Recover, Discard or Cancel. Lock files prevent
 a live window's copy being offered by another window. Recovery loads validated
@@ -640,6 +713,8 @@ saving or explicit discard/clean close removes that window's recovery copy;
 cancelling close retains it. The two-minute interval means very recent edits can
 still be lost on interruption. External `.geo` dependencies remain outside the
 embedded main-source recovery guarantee.
+
+#### Measured archive performance
 
 Persistence measurements on the validation host (fresh process per size):
 
@@ -655,11 +730,7 @@ libraries and verification arrays. It measures backend archive persistence, not
 geometry generation or viewport rendering; these figures are not UI latency or
 cross-machine guarantees. Reducing numeric/list copies remains open work.
 
-Use **File → Save project** (`Ctrl+S`) or **Save project as…** (`Ctrl+Shift+S`)
-to write a `.gsproj` archive. **Open project…** (`Ctrl+Shift+O`) restores it;
-**Open Geometry** remains `Ctrl+O`. Dataset export is now `Ctrl+Alt+E`.
-Saving/opening is unavailable during import, generation or an active parametrisation
-workspace; close that workspace first to keep transient previews out of projects.
+#### What a project stores
 
 Projects contain the main CAD source, cached display topology, original generated
 coordinates and entity tags, generated/failed region records, sampling recipes,
@@ -669,7 +740,9 @@ and coordinate arrays use compressed numeric storage rather than large JSON list
 on disk, and load without pickle. Opening restores cached samples and display
 without CAD execution, remeshing or regeneration. Writes use atomic replacement;
 invalid versions, checksums or content are rejected before replacing the workspace.
-Save explicitly after editing; changes are not autosaved.
+Save explicitly after editing to update the project file; periodic recovery copies are separate from manual saves.
+
+#### Moved or changed CAD sources
 
 The project uses the original CAD path if it still matches the saved hash.
 Otherwise it restores the embedded source into an application-managed temporary

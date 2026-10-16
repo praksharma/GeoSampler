@@ -336,6 +336,11 @@ are outside the initial release; use the verified neutral export formats instead
 - [ ] End-to-end PINN example loading parameter-conditioned coordinates and separate
       boundary/interior datasets, plus regeneration with topology-change rejection.
 
+## Documentation
+
+- [x] Add a searchable Zensical site with focused user/developer pages, light/dark
+      themes, canonical-guide sync checks and a strict build-only CI workflow.
+
 ## Project persistence and sampled-area editing
 
 - [x] File menu save/open/save-as `.gsproj` archives with CAD and numeric arrays.
