@@ -62,6 +62,9 @@ class ParametrisationDialog(QDialog):
             spin.valueChanged.connect(self.mark_changed)
         self.scope.currentIndexChanged.connect(self.mark_changed)
         self.regions.itemChanged.connect(self.mark_changed)
+        self.reset_button = QPushButton('Reset setup')
+        self.reset_button.clicked.connect(self.reset_setup)
+        layout.addWidget(self.reset_button)
         buttons = QHBoxLayout(); layout.addLayout(buttons)
         for title, callback in [('Save setup…', self.save), ('Load setup…', self.load), ('Close', self.close)]:
             button = QPushButton(title); button.clicked.connect(callback); buttons.addWidget(button)
@@ -78,6 +81,19 @@ class ParametrisationDialog(QDialog):
     def mark_changed(self):
         if self.window.view.translation_preview is not None:
             self.status.setText('Parameters changed. The viewport still shows the previous preview; click Preview configuration to update.')
+        else:
+            self.status.setText('Parameters changed. Preview or process/export explicitly.')
+
+    def reset_setup(self):
+        """Start an identity configuration for this model and restore its view."""
+        self.restore()
+        self.source_hash = self.window.geometry['source_hash'] if self.window.geometry else None
+        self.scope.setCurrentIndex(self.scope.findData('domain'))
+        for spin in self.offsets:
+            spin.setValue(0)
+        for i in range(self.regions.count()):
+            self.regions.item(i).setCheckState(Qt.CheckState.Unchecked)
+        self.status.setText('Setup reset to whole domain with zero translation. Preview or process/export explicitly.')
 
     def scope_changed(self):
         regions = self.scope.currentData() == 'regions'

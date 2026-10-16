@@ -418,6 +418,11 @@ and source geometry hash. It contains no generated coordinates. Loading rejects
 a different model or missing selected-region labels, and never processes samples
 automatically. Regenerate the original datasets before reusing a saved setup.
 Setup save/load is also available separately; full projects preserve the current setup.
+**Reset setup** restores the original view, chooses whole domain, zeros all three
+translations and clears region bindings for the current model. It does not process
+or export samples. Closing and reopening the workspace retains the reset settings;
+use Save Project to persist them. Restore original view only removes the preview
+and keeps the configured parameters.
 
 Next stages: rotation and positive scaling with pivots and explicit composition
 order; Cartesian/LHS/Sobol/random parameter sweeps; cancellable processing and

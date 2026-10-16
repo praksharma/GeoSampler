@@ -253,7 +253,7 @@ are outside the initial release; use the verified neutral export formats instead
 
 - [ ] Extend reversible preview to rotation/scaling and regenerated geometry;
       keep original CAD, datasets, region assignments and visibility intact.
-- [ ] Keep parameter edits lightweight: mark stale previews/results and require
+- [x] Keep parameter edits lightweight: mark stale previews/results and require
       explicit Preview or Process configurations; never auto-run complete sweeps.
 - [ ] Three modes: Preview one configuration; Batch process all configurations
       without changing the viewport; Export-only stream results to disk.
@@ -312,7 +312,8 @@ are outside the initial release; use the verified neutral export formats instead
 - [ ] Optional point-cloud omission and full `.geo` dependency bundling/checksums.
 - [x] Retain setup changes when reopening the workspace and include them in projects;
       remap region renames and clear bindings when datasets/model are cleared.
-- [ ] Explicit new/reset parametrisation setup action.
+- [x] Explicit new/reset parametrisation setup action; restore the original view,
+      clear region bindings and retain the reset configuration on reopening.
 
 ### Acceptance checks
 
