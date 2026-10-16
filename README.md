@@ -2,12 +2,13 @@
 
 Geometry-aware point sampling for PINNs and scientific machine learning.
 
-**Current status:** import Gmsh `.geo` geometry, inspect it in the offline 3D
+**Current status:** import Gmsh `.geo`, STEP, OCC BREP or IGES geometry, inspect it in the offline 3D
 viewport, and select original faces or edges using separate tools. Includes
 synchronized tree selection, multi-selection, imported group information,
 dockable panes, a Sampled Areas tree and light/dark themes. Generate labelled datasets with seven
 sampling methods, preview interior or boundary coordinates, and export labelled
-xarray/NetCDF or NumPy NPZ arrays. Region editing is planned.
+xarray/NetCDF or NumPy NPZ arrays with applicable outward normals. Create boundary
+regions independently of dataset labels, and save full portable projects.
 
 ## Quick start
 
@@ -24,8 +25,9 @@ Drag to orbit, right-drag to pan, and scroll to zoom. Hover the grouped toolbar
 icons for tooltips; use visibility controls to hide geometry, faces, edges or
 points, or isolate a selected sampled region.
 
+Use **Boundary regions…** to label and colour multiple existing faces or edges.
 Open the **Sampling** tab on the right. Choose selected faces/edges, an imported
-group, or the domain interior; set the method, count, seed, and dataset label;
+group, a named boundary region, or the domain interior; set the method, count, seed, and dataset label;
 then click **Generate samples**. The **Sampled Areas** tree lists each dataset
 and its details; check or uncheck labels to show or hide their points.
 Right-click faces for visibility controls, or sampled areas to edit, rename and recolour them.
@@ -55,6 +57,7 @@ Import prepared CAD → label existing edges/faces → sample regions and interi
 export xarray/NetCDF or NumPy NPZ datasets. CAD already contains the required
 boundary partitions. GeoSampler does not prescribe boundary values or solve PDEs.
 
+Try the reproducible [annulus export example](examples/sample_annulus.py).
 See [GUIDE.md](GUIDE.md), [TODO.md](TODO.md), and the original [roadmap](roadmap.txt).
 Application shell adapted from PyniteGUI: [attribution](THIRD_PARTY.md).
 Licensed under [GNU AGPL v3](LICENSE).

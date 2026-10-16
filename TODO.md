@@ -106,7 +106,9 @@ Acceptance checks:
 - [x] Add applicable normals to exports as finite per-point numeric arrays;
       preserve them in projects and through translation.
 - [x] Save/load full sampling configurations and regenerate datasets.
-- [ ] Installation validation, examples and release documentation.
+- [x] Development-preview installation validation, runnable export example and
+      release documentation (macOS arm64 / Python 3.12).
+- [ ] Validate Windows/Linux installations and graphics before a cross-platform release.
 
 ## 6. Broader CAD import — next priority
 
