@@ -372,7 +372,11 @@ cancellation, visibility and export with the default Multicore mode.
 Right-click a face in the geometry tree to hide the selected faces, isolate them,
 or show all faces again. Right-clicking an unselected face selects it; right-clicking
 one of several selected faces keeps the group. These controls affect shaded faces;
-edges retain their separate visibility setting. Hidden faces cannot be picked in
+edges retain their separate visibility setting. Picking uses the nearest visible face at the cursor. Edge picking uses a fixed
+six-pixel radius at every zoom level and tests occlusion at the candidate edge
+point; an edge behind a visible face cannot be selected through it. The nearest
+edge in screen distance wins, with camera depth breaking ties. Geometry outside
+the camera clipping range is ineligible. Hidden faces cannot be picked in
 3D, but remain available in the tree. Show all faces also restores the Geometry and
 Faces switches and exits sampled-region isolation. Importing geometry clears face masks.
 

@@ -62,7 +62,7 @@ contains the boundary partitions; GeoSampler does not create or edit them.
 - [x] Show entity type, ID, group membership and relevant details in Properties.
 - [x] Support hide, isolate and show-all controls.
 - [x] Prevent orbit drags from being interpreted as selection clicks.
-- [ ] Apply a consistent visible-entity picking policy; test edges at different
+- [x] Apply a consistent visible-entity picking policy; test edges at different
       zoom levels and faces partly obscured by other geometry.
 
 Acceptance checks:

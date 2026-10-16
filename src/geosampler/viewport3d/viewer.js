@@ -130,15 +130,53 @@ function setMode(value){
 function setSelection(values){selected=new Set(values.map(([d,t])=>`${d}:${t}`));recolor();}
 function pickAt(x,y){
   const rect=renderer.domElement.getBoundingClientRect();
-  raycaster.setFromCamera(new THREE.Vector2((x-rect.left)/rect.width*2-1,1-(y-rect.top)/rect.height*2),camera);
-  const surface=raycaster.intersectObjects(faces.filter(o=>o.visible),false)[0];
-  if(mode==='face')return surface?.object||null;
-  // Approximate a six-pixel tolerance in world units at the orbit target depth.
-  const tolerance=12*camera.position.distanceTo(controls.target)*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/Math.max(rect.height,1);
-  raycaster.params.Line.threshold=tolerance;
-  const hits=raycaster.intersectObjects(edges.filter(o=>o.visible),false);
-  // Do not select edges hidden behind a nearer face.
-  return hits.find(hit=>!surface||hit.distance<=surface.distance+tolerance*2)?.object||null;
+  scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
+  const visibleFaces=faces.filter(o=>o.visible);
+  const frontSurface=(sx,sy)=>{
+    raycaster.setFromCamera(new THREE.Vector2((sx-rect.left)/rect.width*2-1,1-(sy-rect.top)/rect.height*2),camera);
+    return raycaster.intersectObjects(visibleFaces,false).find(hit=>{
+      const z=hit.point.clone().project(camera).z;return z>=-1&&z<=1;
+    });
+  };
+  if(mode==='face')return frontSurface(x,y)?.object||null;
+  // Compare projected segments in pixels, independent of target depth or zoom.
+  // A nearby edge is eligible only if its closest screen point is itself visible.
+  const candidates=[];
+  for(const object of edges){
+    if(!object.visible)continue;
+    const positions=object.geometry.attributes.position;
+    for(let i=0;i+1<positions.count;i+=2){
+      let a=new THREE.Vector3().fromBufferAttribute(positions,i).applyMatrix4(object.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+      let b=new THREE.Vector3().fromBufferAttribute(positions,i+1).applyMatrix4(object.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+      const da=-a.z,db=-b.z,delta=db-da;
+      // Clip segments to the camera's depth slab before perspective projection.
+      if(Math.abs(delta)<1e-15){if(da<camera.near||da>camera.far)continue;}
+      else{
+        const t0=(camera.near-da)/delta,t1=(camera.far-da)/delta;
+        const low=Math.max(0,Math.min(t0,t1)),high=Math.min(1,Math.max(t0,t1));
+        if(low>high)continue;
+        const start=a.clone(),end=b.clone();a.lerpVectors(start,end,low);b.lerpVectors(start,end,high);
+      }
+      const pa=a.clone().applyMatrix4(camera.projectionMatrix),pb=b.clone().applyMatrix4(camera.projectionMatrix);
+      const ax=rect.left+(pa.x+1)*rect.width/2,ay=rect.top+(1-pa.y)*rect.height/2;
+      const bx=rect.left+(pb.x+1)*rect.width/2,by=rect.top+(1-pb.y)*rect.height/2;
+      const dx=bx-ax,dy=by-ay,length2=dx*dx+dy*dy;
+      const t=length2?THREE.MathUtils.clamp(((x-ax)*dx+(y-ay)*dy)/length2,0,1):0;
+      const sx=ax+t*dx,sy=ay+t*dy,pixels=Math.hypot(x-sx,y-sy);
+      if(pixels>6)continue;
+      // Perspective-correct interpolation recovers the 3D point under (sx,sy).
+      const u=(t/(-b.z))/((1-t)/(-a.z)+t/(-b.z));
+      const point=a.clone().lerp(b,u).applyMatrix4(camera.matrixWorld);
+      candidates.push({object,sx,sy,pixels,distance:point.distanceTo(camera.position)});
+    }
+  }
+  candidates.sort((a,b)=>a.pixels-b.pixels||a.distance-b.distance);
+  for(const hit of candidates){
+    const surface=frontSurface(hit.sx,hit.sy);
+    const epsilon=Math.max(hit.distance,camera.near)*1e-6;
+    if(!surface||hit.distance<=surface.distance+epsilon)return hit.object;
+  }
+  return null;
 }
 renderer.domElement.addEventListener('pointerdown',event=>{if(event.button===0)down={x:event.clientX,y:event.clientY,moved:false};});
 renderer.domElement.addEventListener('pointermove',event=>{
