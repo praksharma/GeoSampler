@@ -177,7 +177,7 @@ for BREP, STEP and IGES. Start there without introducing a second geometry backe
       interoperability matrix to NX, CATIA, Creo, Inventor, Fusion, Onshape,
       FreeCAD and Rhino as accessible fixtures allow. Record exporter version,
       settings and units rather than assuming every product exports every format.
-- [ ] Preserve the current model/datasets after failed imports and ensure import
+- [x] Preserve the current model/datasets after failed imports and ensure import
       and sampling errors identify open domains or invalid topology clearly.
 
 ### Later translators and exclusions

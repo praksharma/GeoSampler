@@ -140,9 +140,10 @@ Hover is teal; selection is orange. Edge hover uses a 4-pixel stroke and
 selected edges use a 6-pixel stroke, maintaining their screen width while
 zooming. Ordinary edges remain thin. Surface triangles map to original faces;
 only original geometry edges participate in edge selection. Edges hidden behind
-nearer faces are filtered using a depth tolerance. Edge picking uses an approximate
-six-pixel tolerance at camera target depth. Region editing and hide/isolate tools
-are not implemented yet. Sampling is available through the Sampling tab; its numerical mesh is separate
+nearer visible faces cannot be picked. Edge picking uses a fixed six-pixel
+screen-space radius with depth tested at the nearest candidate edge point.
+Boundary region editing and face hide/isolate controls are available below.
+Sampling is available through the Sampling tab; its numerical mesh is separate
 from the display tessellation.
 
 Display tessellation follows the source geometry's surface meshing settings;
@@ -577,6 +578,15 @@ adjacency, physical groups and edge/face/interior sampling. STEP/BREP/IGES fixtu
 also expose this topology. Projects preserve it and reject inconsistent entity
 references, adjacency or bounds before replacing the workspace. Older projects
 without topology remain readable; reopen the source to populate the new model.
+
+Interior domains are explicitly classified as `solid`, `planar` or
+`open_or_nonplanar`. A `.geo` file without volumes qualifies for 2D interior
+sampling only when its faces are recognized analytic planes lying in one plane.
+An open sphere, a non-planar shell or disconnected planes at different heights
+cannot silently become a 2D interior dataset. Unsupported planar NURBS domains
+are conservatively rejected until their planarity can be verified. Boundary
+sampling remains available. Declared solid meshing failures identify open
+boundaries/invalid topology instead of replacing existing sampled datasets.
 
 Files containing faces but no solid volumes can be displayed and sampled on faces
 and edges. Neutral-format interior sampling requires imported solid volumes and

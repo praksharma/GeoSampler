@@ -253,10 +253,14 @@ def sample_geometry(request):
             gmsh.option.setNumber(f'Mesh.MaxNumThreads{axis}D',threads)
         gmsh.option.setNumber('Mesh.Reproducible',1 if mode=='multicore' else 0)
         gmsh.option.setNumber('Mesh.RandomSeed', 1)
+        from .domains import domain_kind
+        interior_domain = domain_kind(gmsh.model, source_format)
         if request['target'] == 'interior':
             if source_format != 'geo' and not gmsh.model.getEntities(3):
                 raise ValueError('Interior sampling requires solid volumes. This CAD file imported as surfaces only; sample its faces or supply a closed solid model.')
-            dim = 3 if gmsh.model.getEntities(3) else 2
+            if interior_domain == 'open_or_nonplanar':
+                raise ValueError('Interior sampling requires a closed solid or a coplanar analytic-plane .geo domain. This model has open or non-planar surfaces; sample its faces or provide a valid solid.')
+            dim = 3 if interior_domain == 'solid' else 2
             tags = [t for _, t in gmsh.model.getEntities(dim)]
         else:
             entities = sorted(set(tuple(e) for e in request['entities']))
@@ -281,8 +285,13 @@ def sample_geometry(request):
             gmsh.option.setNumber('Mesh.RecombineAll', 0)
             if mode=='multicore' and dim==3:
                 gmsh.option.setNumber('Mesh.Algorithm3D',10)  # Gmsh's parallel HXT mesher.
-            gmsh.model.mesh.generate(dim)
-            gmsh.model.mesh.setOrder(1)
+            try:
+                gmsh.model.mesh.generate(dim)
+                gmsh.model.mesh.setOrder(1)
+            except Exception as error:
+                if dim == 3:
+                    raise ValueError('Could not mesh a closed solid domain; check open boundaries or invalid topology: ' + str(error)) from error
+                raise
         if dim == 1:
             occ_edges = set(gmsh.model.occ.getEntities(1))
             if occ_edges:
@@ -318,6 +327,7 @@ def sample_geometry(request):
                 'resolution': request.get('resolution', 32), 'compute_mode':mode,
                 'cpu_threads':threads, 'mesh_algorithm_2d':int(gmsh.option.getNumber('Mesh.Algorithm')),
                 'mesh_algorithm_3d':int(gmsh.option.getNumber('Mesh.Algorithm3D'))}
+        result['interior_domain'] = interior_domain
         result.update(normal_data)
         if 'boundary_region' in request:
             from .regions import validate_regions

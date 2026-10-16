@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from uuid import uuid4
 from .cad_import import open_source
+from .domains import domain_kind
 
 
 def extract_topology(model, groups):
@@ -38,6 +39,7 @@ def load_geometry(filename):
         edges = gmsh.model.getEntities(1)
         if not faces:
             raise ValueError("This geometry has no faces to display.")
+        interior_domain = domain_kind(gmsh.model, source_format)
         gmsh.option.setNumber("Mesh.ElementOrder", 1)
         gmsh.model.mesh.generate(2)
         gmsh.model.mesh.setOrder(1)
@@ -75,7 +77,8 @@ def load_geometry(filename):
                              "groups": [g["tag"] for g in groups if g["dimension"] == dim and tag in g["entities"]],
                              "positions": vertices})
         geometry = {"document": uuid4().hex, "source": str(path), "name": path.name,
-                "dimension": 3 if gmsh.model.getEntities(3) or source_format != "geo" else 2,
+                "dimension": 2 if interior_domain == "planar" else 3,
+                "interior_domain": interior_domain,
                 "source_format": source_format, "solid_count": len(gmsh.model.getEntities(3)),
                 "coordinate_units": "Source geometry units (unspecified)",
                 "source_hash": hashlib.sha256(path.read_bytes()).hexdigest(),
