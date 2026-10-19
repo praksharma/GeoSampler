@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import tempfile
-from PySide6.QtCore import Qt, QByteArray, QEventLoop
+from PySide6.QtCore import Qt, QByteArray, QEventLoop, QTimer
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QProgressBar
 from .project import save_project, load_project
 from .recovery import RecoveryActions
@@ -71,6 +71,7 @@ class ProjectActions(RecoveryActions):
             for control, previous in zip(locked, enabled): control.setEnabled(previous)
             self.refresh_project_actions()
             worker.deleteLater()
+            QTimer.singleShot(0, self.retry_pending_close)
 
     def workspace_digest(self):
         """Compare content/recipes, excluding ordinary viewport navigation."""
@@ -141,6 +142,7 @@ class ProjectActions(RecoveryActions):
                 self.saving_project = False
                 self.refresh_project_actions()
                 loop.quit()
+                QTimer.singleShot(0, self.retry_pending_close)
         if self.view.is_ready:
             self.view.web.page().runJavaScript('JSON.stringify(window.geoViewer.cameraState())',write)
         else:write(None)

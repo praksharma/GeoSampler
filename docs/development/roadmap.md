@@ -359,3 +359,12 @@ are outside the initial release; use the verified neutral export formats instead
       explicit Save As after recovery, and cleanup after successful save/discard.
 - [x] Unsaved-change Save/Discard/Cancel prompts before workspace replacement or
       closing; cancelled or failed saves retain the current workspace.
+
+## Shutdown reliability
+
+- [x] Route Ctrl+C/SIGINT and SIGTERM through the Qt close workflow, preserving
+      unsaved-change protection and restoring signal handlers after the event loop.
+- [x] Remember close requests during project I/O/save and retry after completion;
+      prevent nested close handlers from opening duplicate prompts.
+- [x] Test real process exit, deferred close, completed save and Cancel behaviour;
+      manually verify Ctrl+C in automatic NVIDIA and software rendering modes.

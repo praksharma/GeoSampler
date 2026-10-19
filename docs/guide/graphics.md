@@ -13,3 +13,12 @@ with the automatic NVIDIA setup, while 6.11.2 successfully reported
 `ANGLE (NVIDIA Corporation, Quadro RTX 4000/PCIe/SSE2, OpenGL ES 3.2)` through
 the actual WebGL context. Check Help → Graphics information for the observed
 renderer. The software fallback remains available for other machines.
+
+Close the main window or use File → Quit (`Ctrl+Q`). Terminal `Ctrl+C` (SIGINT)
+and SIGTERM are routed through the same close workflow rather than raising
+`KeyboardInterrupt` inside a Qt callback. Unsaved changes still offer
+Save/Discard/Cancel. When a project file operation is in progress, closing waits
+for it to finish and retries automatically; it does not interrupt an atomic save.
+The `qt.qpa.wayland: EGL not available` warning alone does not mean shutdown failed.
+Process-level tests check terminal signals and normal close, with separate UI
+checks for deferred closing and cancelled unsaved-change prompts.

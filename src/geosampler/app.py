@@ -23,6 +23,8 @@ class MainWindow(ProjectActions, QMainWindow):
     def __init__(self, settings=None):
         super().__init__()
         self.settings = settings if settings is not None else QSettings("GeoSampler", "GeoSampler")
+        self._close_requested = False
+        self._handling_close = False
         self.geometry = None
         self.project_path = None
         self.saved_digest = None
@@ -673,32 +675,46 @@ class MainWindow(ProjectActions, QMainWindow):
                 lines.append('Boundary region: ' + region['label'])
         self.properties.setText("\n".join(lines))
 
-    def closeEvent(self, event):
-        if self.saving_project or self.project_io is not None:
-            event.ignore()
-            return
-        if self.boundary_dialog is not None:
-            self.boundary_dialog.reject()
-        if self.parametrisation_dialog is not None:
-            self.parametrisation_dialog.reject()
-        if not self.confirm_unsaved_changes():
-            event.ignore()
-            return
-        self.recovery_timer.stop()
-        self.clear_recovery()
-        self.sampling.shutdown()
-        if self.import_process:
-            process = self.import_process
-            self.import_process = None
-            process.kill()
-            process.waitForFinished(2000)
+    def retry_pending_close(self):
+        if self._close_requested and not self._handling_close and not self.saving_project and self.project_io is None:
+            self.close()
 
-        if self.project_cache is not None:
-            self.project_cache.cleanup()
-            self.project_cache = None
-        self.settings.setValue("geometry", self.saveGeometry())
-        self.settings.setValue("layout", self.saveState())
-        super().closeEvent(event)
+    def closeEvent(self, event):
+        if self._handling_close:
+            event.ignore()
+            return
+        if self.saving_project or self.project_io is not None:
+            self._close_requested = True
+            self.statusBar().showMessage('Closing after the current project file operation finishes…')
+            event.ignore()
+            return
+        self._close_requested = False
+        self._handling_close = True
+        try:
+            if self.boundary_dialog is not None:
+                self.boundary_dialog.reject()
+            if self.parametrisation_dialog is not None:
+                self.parametrisation_dialog.reject()
+            if not self.confirm_unsaved_changes():
+                event.ignore()
+                return
+            self.recovery_timer.stop()
+            self.clear_recovery()
+            self.sampling.shutdown()
+            if self.import_process:
+                process = self.import_process
+                self.import_process = None
+                process.kill()
+                process.waitForFinished(2000)
+
+            if self.project_cache is not None:
+                self.project_cache.cleanup()
+                self.project_cache = None
+            self.settings.setValue("geometry", self.saveGeometry())
+            self.settings.setValue("layout", self.saveState())
+            super().closeEvent(event)
+        finally:
+            self._handling_close = False
 
 
 def main():
@@ -708,14 +724,23 @@ def main():
     parser.add_argument("--software-rendering", action="store_true", help="Use software rendering for the 3D viewport")
     args = parser.parse_args()
     configure_graphics("software" if args.software_rendering else "auto")
-    application = QApplication([sys.argv[0]])
-    application.setApplicationName("GeoSampler")
-    application.setOrganizationName("GeoSampler")
-    settings = QSettings("GeoSampler", "GeoSampler")
-    configure_theme(application, settings.value("theme", "light"))
-    install_window_controls(application)
-    window = MainWindow(settings)
-    window.show()
-    if args.geometry:
-        window.load_geometry(args.geometry)
-    sys.exit(application.exec())
+    from .shutdown import SignalShutdown
+    shutdown = SignalShutdown()
+    code = None
+    try:
+        application = QApplication([sys.argv[0]])
+        application.setApplicationName("GeoSampler")
+        application.setOrganizationName("GeoSampler")
+        shutdown.start(application)
+        settings = QSettings("GeoSampler", "GeoSampler")
+        configure_theme(application, settings.value("theme", "light"))
+        install_window_controls(application)
+        window = MainWindow(settings)
+        shutdown.window = window
+        window.show()
+        if args.geometry:
+            window.load_geometry(args.geometry)
+        code = application.exec()
+    finally:
+        shutdown.restore(terminating=code is not None)
+    sys.exit(code)
