@@ -23,7 +23,7 @@ class ProjectWorkerUiTest(unittest.TestCase):
             try:
                 self.wait_for(lambda:window.view.is_ready)
                 window.load_geometry(FIXTURE);self.wait_for(lambda:window.import_process is None)
-                path=Path(directory)/'saved.gsproj'; window.project_path=path
+                path=Path(directory)/'saved.jorvik'; window.project_path=path
                 ticks=[];states=[]
                 timer=QTimer(window);timer.setInterval(5)
                 timer.timeout.connect(lambda:(ticks.append(True),states.append((window.sampling.isEnabled(),window.open_action.isEnabled())) if window.project_io is not None else None))

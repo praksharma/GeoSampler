@@ -18,7 +18,7 @@ class EmptyProjectUiTest(unittest.TestCase):
 
     def test_empty_import_save_and_workspace_replacement(self):
         with tempfile.TemporaryDirectory() as directory:
-            path = create_empty_project(Path(directory) / 'from-another-app.gsproj')
+            path = create_empty_project(Path(directory) / 'from-another-app.jorvik')
             window = MainWindow(QSettings(str(Path(directory) / 'settings.ini'), QSettings.Format.IniFormat))
             window.show()
             try:
@@ -54,7 +54,7 @@ class EmptyProjectUiTest(unittest.TestCase):
                 self.wait_for(lambda: window.sampling.process is None)
                 self.assertTrue(window.sampling.batches)
                 self.assertTrue(window.save_project())
-                other = create_empty_project(Path(directory) / 'other.gsproj')
+                other = create_empty_project(Path(directory) / 'other.jorvik')
                 self.assertTrue(window.load_project_file(other))
                 self.assertIsNone(window.geometry)
                 self.assertIsNone(window.view.geometry)
@@ -84,9 +84,43 @@ class EmptyProjectUiTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             window = MainWindow(QSettings(str(Path(directory) / 'settings.ini'), QSettings.Format.IniFormat))
             try:
-                path = Path(directory) / 'created.gsproj'
-                with patch('jorvik.project_ui.QFileDialog.getSaveFileName', return_value=(str(path), '')):
+                path = Path(directory) / 'created.jorvik'
+                with patch('jorvik.project_ui.QFileDialog.getSaveFileName', return_value=(str(path.with_suffix('')), '')) as dialog:
                     self.assertTrue(window.save_project())
+                    self.assertTrue(dialog.call_args.args[2].endswith('.jorvik'))
+                    self.assertIn('*.jorvik', dialog.call_args.args[3])
+                    self.assertIn('*.gsproj', dialog.call_args.args[3])
                 self.assertEqual(window.project_path, path)
                 self.assertIsNone(load_project(path)[0]['geometry'])
+            finally: window.close()
+
+    def test_legacy_save_keeps_path_and_save_as_prefers_jorvik(self):
+        from jorvik.geometry import load_geometry
+        from jorvik.project import save_project
+        from test_project import state
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            path = directory / 'legacy.gsproj'
+            saved_state = state(); saved_state['selected_area'] = None
+            save_project(path, load_geometry(FIXTURE), [], saved_state)
+            window = MainWindow(QSettings(str(directory / 'settings.ini'), QSettings.Format.IniFormat))
+            try:
+                with patch('jorvik.project_ui.QFileDialog.getOpenFileName', return_value=(str(path), '')) as dialog:
+                    window.open_project()
+                    self.assertIn('*.jorvik', dialog.call_args.args[3])
+                    self.assertIn('*.gsproj', dialog.call_args.args[3])
+                self.assertIsNotNone(window.geometry)
+                with patch('jorvik.project_ui.QFileDialog.getSaveFileName') as dialog:
+                    self.assertTrue(window.save_project())
+                    dialog.assert_not_called()
+                self.assertEqual(window.project_path, path)
+                before = path.read_bytes()
+                modern = directory / 'modern.jorvik'
+                with patch('jorvik.project_ui.QFileDialog.getSaveFileName',
+                           return_value=(str(modern.with_suffix('')), '')) as dialog:
+                    self.assertTrue(window.save_project(save_as=True))
+                    self.assertEqual(Path(dialog.call_args.args[2]), path.with_suffix('.jorvik'))
+                self.assertEqual(window.project_path, modern)
+                self.assertEqual(path.read_bytes(), before)
+                self.assertEqual(load_project(modern)[0]['geometry']['source_hash'], window.geometry['source_hash'])
             finally: window.close()

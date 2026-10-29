@@ -20,7 +20,7 @@ class ProjectUiTest(unittest.TestCase):
     def test_save_restore_and_edit(self):
         with tempfile.TemporaryDirectory() as directory:
             source=Path(directory)/'cylinder.brep';source.write_bytes(FIXTURE.read_bytes())
-            project=Path(directory)/'structure.gsproj'
+            project=Path(directory)/'structure.jorvik'
             window=MainWindow(QSettings(str(Path(directory)/'settings.ini'),QSettings.Format.IniFormat));window.show()
             try:
                 self.wait_for(lambda:window.view.is_ready)
@@ -33,7 +33,7 @@ class ProjectUiTest(unittest.TestCase):
                 window.sampling.point_size.setValue(9);window.sampling.through.setChecked(False)
                 window.hide_faces([2]);window.show_sampled_area('wall')
                 window.parametrisation_setup={'schema_version':1,'source_hash':window.geometry['source_hash'],'scope':'regions','regions':['wall'],'translation':[1.,0.,0.]}
-                with patch('jorvik.project_ui.QFileDialog.getSaveFileName',return_value=(str(project),'Jorvik project (*.gsproj)')):
+                with patch('jorvik.project_ui.QFileDialog.getSaveFileName',return_value=(str(project),'Jorvik project (*.jorvik)')):
                     window.save_project_action.trigger()
                     self.wait_for(project.exists)
                 self.assertEqual(window.project_path,project)
@@ -81,7 +81,7 @@ class ProjectUiTest(unittest.TestCase):
                 self.assertEqual(json.dumps(window.sampling.batches),before)
                 self.assertNotIn('cancelled_edit',window.sampled_areas.areas)
                 # A corrupt project must not replace the active document.
-                bad=Path(directory)/'bad.gsproj';bad.write_bytes(b'invalid project')
+                bad=Path(directory)/'bad.jorvik';bad.write_bytes(b'invalid project')
                 document=window.geometry['document']
                 with patch('jorvik.project_ui.QMessageBox.warning') as warning:
                     window.load_project_file(bad);warning.assert_called_once()

@@ -108,7 +108,7 @@ class NormalsTest(unittest.TestCase):
                 self.assertNotIn('normals',record['metadata'])
                 self.assertNotIn('normals',metadata['datasets'][1])
             saved = state(); saved['selected_area']=batch['label']
-            path=Path(directory)/'normals.gsproj'
+            path=Path(directory)/'normals.jorvik'
             save_project(path,geometry,[(batch,'Generated',False)],saved)
             manifest,_=load_project(path)
             self.assertEqual(manifest['schema_version'],2)

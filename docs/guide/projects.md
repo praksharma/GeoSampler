@@ -5,9 +5,9 @@
 Launch directly into a project document:
 
 ```sh
-jorvik path/to/model.gsproj
+jorvik path/to/model.jorvik
 # From a source checkout:
-uv run jorvik path/to/model.gsproj
+uv run jorvik path/to/model.jorvik
 ```
 
 The positional argument also continues to accept supported geometry files
@@ -15,7 +15,14 @@ The positional argument also continues to accept supported geometry files
 launch files produce a clear error on stderr and a nonzero exit status; they are
 never replaced as a side effect of opening.
 
-A `.gsproj` can be empty. File → Save project saves the normal empty workspace;
+New project documents use `.jorvik`. Existing `.gsproj` files remain supported by
+the creation API, command line, Open project dialog and recovery workflow. The
+archive format and schema are unchanged: only the preferred filename extension
+has changed. Saving an opened legacy file keeps its `.gsproj` filename; Save As
+suggests `.jorvik` and leaves the old file intact. No files are automatically
+renamed. External applications should create new documents with `.jorvik`.
+
+A `.jorvik` can be empty. File → Save project saves the normal empty workspace;
 opening an empty document leaves it ready for geometry import. Import geometry,
 then Save to update that same document without choosing a filename again. The
 import counts as an unsaved edit, including when closing immediately afterward.
@@ -26,13 +33,13 @@ the interface:
 ```python
 from jorvik.project import create_empty_project
 
-project_path = create_empty_project("model.gsproj")
-# Then launch: jorvik model.gsproj
+project_path = create_empty_project("model.jorvik")
+# Then launch: jorvik model.jorvik
 ```
 
 `create_empty_project(path, *, overwrite=False)` returns a `pathlib.Path` and
-requires a `.gsproj` suffix and an existing parent directory. It atomically
-creates a complete archive, raising `FileExistsError` if the destination already
+accepts `.jorvik` (preferred) or legacy `.gsproj` and requires an existing parent
+directory. It atomically creates a complete archive, raising `FileExistsError` if the destination already
 exists. Pass `overwrite=True` only when replacement is intended. Empty documents
 use project schema **3**, with `geometry: null`, no datasets, no source and empty
 state; they cannot contain geometry references or embedded source data. Their
@@ -45,7 +52,7 @@ in the document.
 ## Saving and opening
 
 Use **File → Save project** (`Ctrl+S`) or **Save project as…** (`Ctrl+Shift+S`)
-to write a `.gsproj` archive. **Open project…** (`Ctrl+Shift+O`) restores it;
+to write a `.jorvik` archive. **Open project…** (`Ctrl+Shift+O`) restores it;
 **Open Geometry** remains `Ctrl+O`. Dataset export is now `Ctrl+Alt+E`.
 Saving/opening is unavailable during import, generation or an active parametrisation
 workspace; close that workspace first to keep transient previews out of projects.

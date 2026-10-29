@@ -28,7 +28,7 @@ class ProjectTest(unittest.TestCase):
         request.update(label='wall',target='selection',entities=[[2,1]],method='sobol',count=32,seed=42,resolution=32)
         batch=sample_geometry(request);batch['colour']='#ffc857'
         with tempfile.TemporaryDirectory() as directory:
-            path=Path(directory)/'annulus.gsproj'
+            path=Path(directory)/'annulus.jorvik'
             save_project(path,geometry,[(batch,'Generated',False)],state())
             data,source=load_project(path)
             self.assertEqual(data['geometry'],geometry)

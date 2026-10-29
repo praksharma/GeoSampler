@@ -738,7 +738,7 @@ class MainWindow(ProjectActions, QMainWindow):
 
 def main():
     parser = argparse.ArgumentParser(description="Jorvik desktop application")
-    parser.add_argument("document", nargs="?", help="Jorvik .gsproj project, Gmsh, STEP, Open CASCADE BREP or IGES file to open")
+    parser.add_argument("document", nargs="?", help="Jorvik .jorvik project (legacy .gsproj accepted), Gmsh, STEP, Open CASCADE BREP or IGES file to open")
     parser.add_argument("--version", action="version", version=f"Jorvik {__version__}")
     parser.add_argument("--software-rendering", action="store_true", help="Use software rendering for the 3D viewport")
     args = parser.parse_args()

@@ -35,7 +35,7 @@ def run(count):
                        'seed':42,'cpu_threads':1,'label':'inner_1','target':'selection'},
            'layout':None,'camera':None,'parametrisation':None,'boundary_regions':[]}
     with tempfile.TemporaryDirectory(prefix='jorvik-project-benchmark-') as directory:
-        path=Path(directory)/'large.gsproj'
+        path=Path(directory)/'large.jorvik'
         started=time.perf_counter();save_project(path,geometry,[(batch,'Generated',True)],state)
         save_seconds=time.perf_counter()-started
         started=time.perf_counter();manifest,_=load_project(path)

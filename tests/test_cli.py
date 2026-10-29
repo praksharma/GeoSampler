@@ -32,12 +32,13 @@ class CliTest(unittest.TestCase):
 
     def test_project_and_geometry_dispatch(self):
         with tempfile.TemporaryDirectory() as directory:
-            project = create_empty_project(Path(directory) / 'space in name.GSPROJ')
-            code, window, application, _ = self.run_main(project)
-            self.assertEqual(code, 0)
-            window.load_project_file.assert_called_once_with(project.resolve(), raise_errors=True)
-            window.load_geometry.assert_not_called()
-            application.exec.assert_called_once()
+            for extension in ('.jorvik', '.JORVIK', '.gsproj', '.GSPROJ'):
+                project = create_empty_project(Path(directory) / ('space in name' + extension))
+                code, window, application, _ = self.run_main(project)
+                self.assertEqual(code, 0)
+                window.load_project_file.assert_called_once_with(project.resolve(), raise_errors=True)
+                window.load_geometry.assert_not_called()
+                application.exec.assert_called_once()
             for extension in ('geo', 'step', 'stp', 'brep', 'iges', 'igs'):
                 path = Path(directory) / ('model.' + extension); path.touch()
                 self.assertEqual(launch_document(path), ('geometry', path.resolve()))
@@ -49,12 +50,12 @@ class CliTest(unittest.TestCase):
 
     def test_failures_are_nonzero_and_preserve_files(self):
         with tempfile.TemporaryDirectory() as directory:
-            for name, contents, message in [('missing.gsproj', None, 'does not exist'),
+            for name, contents, message in [('missing.jorvik', None, 'does not exist'),
                                              ('unsupported.stl', b'original', 'Unsupported file'),
-                                             ('corrupt.gsproj', b'invalid zip', 'Could not open project')]:
+                                             ('corrupt.jorvik', b'invalid zip', 'Could not open project')]:
                 path = Path(directory) / name
                 if contents is not None: path.write_bytes(contents)
-                if name == 'corrupt.gsproj':
+                if name == 'corrupt.jorvik':
                     from jorvik.project import load_project
                     try: load_project(path)
                     except Exception as error: load_error = error
@@ -80,8 +81,8 @@ class CliProcessTest(unittest.TestCase):
             directory = Path(directory)
             environment = dict(os.environ, XDG_CONFIG_HOME=str(directory / 'config'),
                                XDG_CACHE_HOME=str(directory / 'cache'), XDG_DATA_HOME=str(directory / 'data'))
-            empty = create_empty_project(directory / 'empty.gsproj')
-            populated = directory / 'populated.gsproj'
+            empty = create_empty_project(directory / 'empty.jorvik')
+            populated = directory / 'populated.jorvik'
             saved_state = state(); saved_state['selected_area'] = None
             save_project(populated, load_geometry(FIXTURE), [], saved_state)
             # Exercise the real entry point and normal loader; only schedule an
@@ -98,7 +99,10 @@ def loaded(window, filename, **kwargs):
 app.MainWindow.load_project_file = loaded
 app.main()
 """
-            for path, is_empty in [(empty, True), (populated, False)]:
+            legacy_empty = directory / 'empty.gsproj'; legacy_empty.write_bytes(empty.read_bytes())
+            legacy_populated = directory / 'populated.gsproj'; legacy_populated.write_bytes(populated.read_bytes())
+            for path, is_empty in [(empty, True), (populated, False),
+                                   (legacy_empty, True), (legacy_populated, False)]:
                 before = path.read_bytes()
                 result = subprocess.run([sys.executable, '-c', code, '--software-rendering', str(path)],
                                         env=environment, capture_output=True, text=True, timeout=25)
@@ -106,8 +110,8 @@ app.main()
                 record = json.loads(result.stdout.strip().splitlines()[-1])
                 self.assertEqual(record, {'path': str(path), 'empty': is_empty})
                 self.assertEqual(path.read_bytes(), before)
-            for name, contents, message in [('missing.gsproj', None, 'does not exist'),
-                                             ('bad.gsproj', b'not a zip', 'Could not open project'),
+            for name, contents, message in [('missing.jorvik', None, 'does not exist'),
+                                             ('bad.jorvik', b'not a zip', 'Could not open project'),
                                              ('bad.step', b'not CAD', 'Could not open geometry'),
                                              ('bad.stl', b'not supported', 'Unsupported file')]:
                 path = directory / name

@@ -79,8 +79,8 @@ class RegionsUiTest(unittest.TestCase):
                 self.assertEqual(window.sampling.batches[0], batch)
                 self.assertEqual(window.boundary_regions[0]['id'], first['id'])
                 self.assertIn('renamed', window.properties.text())
-                project = Path(directory) / 'regions.gsproj'
-                with patch('jorvik.project_ui.QFileDialog.getSaveFileName', return_value=(str(project),'Jorvik project (*.gsproj)')):
+                project = Path(directory) / 'regions.jorvik'
+                with patch('jorvik.project_ui.QFileDialog.getSaveFileName', return_value=(str(project),'Jorvik project (*.jorvik)')):
                     window.save_project()
                     self.wait_for(project.exists)
                 expected = deepcopy(window.boundary_regions)

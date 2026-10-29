@@ -101,7 +101,7 @@ class DeferredCloseTest(unittest.TestCase):
                 self.wait_for(lambda:window.view.is_ready)
                 window.load_geometry(FIXTURE);self.wait_for(lambda:window.import_process is None)
                 window.sampling.seed.setValue(17)
-                window.project_path=Path(directory)/'saved.gsproj'
+                window.project_path=Path(directory)/'saved.jorvik'
                 from jorvik.project import save_project
                 def slow_save(*args):time.sleep(.12);return save_project(*args)
                 with patch('jorvik.project_ui.save_project',side_effect=slow_save):

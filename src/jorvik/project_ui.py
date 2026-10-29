@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 from PySide6.QtCore import Qt, QByteArray, QEventLoop, QTimer
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QProgressBar
-from .project import save_project, load_project
+from .project import save_project, load_project, PROJECT_EXTENSION, PROJECT_FILTER
 from .recovery import RecoveryActions
 
 
@@ -114,10 +114,12 @@ class ProjectActions(RecoveryActions):
             return False
         path=self.project_path if not save_as else None
         if not path:
-            filename,_=QFileDialog.getSaveFileName(self,'Save Jorvik project',(self.geometry['name'] if self.geometry else 'Untitled')+'.gsproj','Jorvik project (*.gsproj)')
+            suggested = (self.project_path.with_suffix(PROJECT_EXTENSION) if self.project_path else
+                         Path((Path(self.geometry['name']).stem if self.geometry else 'Untitled') + PROJECT_EXTENSION))
+            filename,_=QFileDialog.getSaveFileName(self,'Save Jorvik project',str(suggested),PROJECT_FILTER)
             if not filename:return False
             path=Path(filename)
-            if not path.suffix:path=path.with_suffix('.gsproj')
+            if not path.suffix:path=path.with_suffix(PROJECT_EXTENSION)
         result = []
         loop = QEventLoop()
         self.saving_project = True
@@ -151,7 +153,7 @@ class ProjectActions(RecoveryActions):
 
     def open_project(self):
         if self.project_busy():return
-        filename,_=QFileDialog.getOpenFileName(self,'Open Jorvik project','','Jorvik project (*.gsproj)')
+        filename,_=QFileDialog.getOpenFileName(self,'Open Jorvik project','',PROJECT_FILTER)
         if filename:self.load_project_file(filename)
 
     def load_project_file(self, filename, *, raise_errors=False):

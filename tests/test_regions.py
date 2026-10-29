@@ -41,7 +41,7 @@ class RegionsTest(unittest.TestCase):
             regions = put_region([], geometry, 'wall', [[1,1],[1,2]], '#abcdef')
             saved = state(); saved['selected_area'] = None; saved['boundary_regions'] = regions
             saved['controls']['target'] = {'region_id': regions[0]['id']}
-            project = Path(directory) / 'regions.gsproj'
+            project = Path(directory) / 'regions.jorvik'
             save_project(project, geometry, [], saved)
             manifest, _ = load_project(project)
             self.assertEqual(manifest['state']['boundary_regions'], regions)

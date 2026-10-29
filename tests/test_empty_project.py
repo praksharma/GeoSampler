@@ -25,7 +25,7 @@ def rewrite_manifest(path, change):
 class EmptyProjectTest(unittest.TestCase):
     def test_empty_round_trip_and_exclusive_creation_without_qt(self):
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / 'empty.gsproj'
+            path = Path(directory) / 'empty.jorvik'
             code = """import sys
 from jorvik.project import create_empty_project
 create_empty_project(sys.argv[1])
@@ -44,12 +44,29 @@ assert not any(name.startswith(('PySide6', 'PyQt')) for name in sys.modules)
             self.assertEqual(create_empty_project(path, overwrite=True), path)
             save_project(path, None, [], {})
             self.assertEqual(load_project(path)[0], manifest)
-            with self.assertRaisesRegex(ValueError, '.gsproj'):
+            with self.assertRaisesRegex(ValueError, '.jorvik'):
                 create_empty_project(Path(directory) / 'wrong.nc')
+
+    def test_new_and_legacy_extensions_share_the_archive_format(self):
+        geometry = load_geometry(FIXTURE)
+        saved_state = state(); saved_state['selected_area'] = None
+        with tempfile.TemporaryDirectory() as directory:
+            expected = None
+            for suffix in ('.jorvik', '.gsproj', '.JORVIK', '.GSPROJ'):
+                path = create_empty_project(Path(directory) / ('document' + suffix))
+                empty, source = load_project(path)
+                self.assertIsNone(empty['geometry']); self.assertIsNone(source)
+                save_project(path, geometry, [], saved_state)
+                manifest, source = load_project(path)
+                self.assertEqual(manifest['geometry'], geometry)
+                self.assertEqual(source, FIXTURE.read_bytes())
+                self.assertEqual(manifest['schema_version'], 2)
+                if expected is None: expected = manifest
+                else: self.assertEqual(manifest, expected)
 
     def test_empty_documents_reject_geometry_references(self):
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / 'empty.gsproj'
+            path = Path(directory) / 'empty.jorvik'
             for field, value in [('areas', [{}]), ('state', {'selection': [[2, 1]]}),
                                  ('source_extension', '.geo'), ('geometry', {})]:
                 with self.subTest(field=field):
@@ -68,7 +85,7 @@ assert not any(name.startswith(('PySide6', 'PyQt')) for name in sys.modules)
         geometry = load_geometry(FIXTURE)
         saved_state = state(); saved_state['selected_area'] = None
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / 'populated.gsproj'
+            path = Path(directory) / 'populated.jorvik'
             for version in (1, 2):
                 save_project(path, geometry, [], saved_state)
                 rewrite_manifest(path, lambda m: m.update(schema_version=version))

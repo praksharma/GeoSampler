@@ -3,7 +3,7 @@ from pathlib import Path
 from uuid import uuid4
 from PySide6.QtCore import QLockFile, QSettings, QStandardPaths, QTimer, Qt
 from PySide6.QtWidgets import QMessageBox
-from .project import save_project
+from .project import save_project, PROJECT_EXTENSION, PROJECT_EXTENSIONS
 
 
 class RecoveryActions:
@@ -12,7 +12,7 @@ class RecoveryActions:
             self.recovery_directory = Path(self.settings.fileName()).parent / 'recovery'
         else:
             self.recovery_directory = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)) / 'recovery'
-        self.recovery_path = self.recovery_directory / (uuid4().hex + '.gsproj')
+        self.recovery_path = self.recovery_directory / (uuid4().hex + PROJECT_EXTENSION)
         self.recovery_lock = None
         self.recovered_from = None
         self.recovery_digest = None
@@ -68,7 +68,8 @@ class RecoveryActions:
             QTimer.singleShot(1000, self.offer_recovery)
             return
         if not self.recovery_directory.is_dir(): return
-        for path in sorted(self.recovery_directory.glob('*.gsproj')):
+        for path in sorted(self.recovery_directory.iterdir()):
+            if not path.is_file() or path.suffix.lower() not in PROJECT_EXTENSIONS: continue
             if path == self.recovery_path: continue
             lock = QLockFile(str(path) + '.lock')
             lock.setStaleLockTime(0)

@@ -45,8 +45,8 @@ class UnsavedUiTest(unittest.TestCase):
                     'jorvik.project_ui.QFileDialog.getSaveFileName',return_value=('','')):
                     self.assertFalse(window.close())
                     self.assertTrue(window.has_unsaved_changes())
-                path=Path(directory)/'saved.gsproj'
-                with patch('jorvik.project_ui.QFileDialog.getSaveFileName',return_value=(str(path),'Jorvik project (*.gsproj)')):
+                path=Path(directory)/'saved.jorvik'
+                with patch('jorvik.project_ui.QFileDialog.getSaveFileName',return_value=(str(path),'Jorvik project (*.jorvik)')):
                     self.assertTrue(window.save_project())
                 self.assertFalse(window.has_unsaved_changes())
                 before=path.read_bytes()

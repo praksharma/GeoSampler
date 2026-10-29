@@ -67,7 +67,7 @@ class TopologyTest(unittest.TestCase):
                         self.assertTrue(np.any(np.isclose(points, 0) | np.isclose(points, 1), axis=1).all())
                 project_state = state()
                 project_state['selected_area'] = None
-                path = Path(directory) / 'cube.gsproj'
+                path = Path(directory) / 'cube.jorvik'
                 save_project(path, geometry, [], project_state)
                 restored, _ = load_project(path)
                 self.assertEqual(restored['geometry'], geometry)
@@ -95,7 +95,7 @@ class TopologyTest(unittest.TestCase):
             geometry = self.cube(directory)
             project_state = state()
             project_state['selected_area'] = None
-            path = Path(directory) / 'cube.gsproj'
+            path = Path(directory) / 'cube.jorvik'
             save_project(path, geometry, [], project_state)
             with zipfile.ZipFile(path) as archive:
                 files = {name: archive.read(name) for name in archive.namelist()}

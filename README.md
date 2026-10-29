@@ -18,7 +18,7 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 uv sync
 uv run jorvik
 # Open an existing project document:
-uv run jorvik path/to/model.gsproj
+uv run jorvik path/to/model.jorvik
 ```
 
 Open a fixture directly:
@@ -28,7 +28,7 @@ uv run jorvik examples/geometries/cfdbench/annulus_unstructured.geo
 ```
 
 Select existing faces or edges, save boundary regions, generate datasets in
-**Sampling**, then export NetCDF/NPZ or save a full `.gsproj` workspace.
+**Sampling**, then export NetCDF/NPZ or save a full `.jorvik` workspace.
 For graphics compatibility, try `uv run jorvik --software-rendering`.
 
 ## Documentation

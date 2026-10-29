@@ -80,7 +80,7 @@ def validate(installed=False, render=False):
                 wait_for(lambda:bool(values))
                 if values[0] != 48: raise RuntimeError('Installed viewport did not render the sample clouds.')
                 areas=[(batch,'Generated',True) for batch in batches]
-                project=Path(directory)/'box.gsproj'
+                project=Path(directory)/'box.jorvik'
                 save_project(project,geometry,areas,window.project_state())
                 restored,_=load_project(project)
                 if restored['areas'][0]['area'] != boundary: raise RuntimeError('Project normal round trip failed.')

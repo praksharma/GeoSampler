@@ -42,7 +42,7 @@ class ImportProvenanceTest(unittest.TestCase):
                 self.assertEqual(metadata['import_options'], options)
                 self.assertEqual(metadata['source_hash'], self.geometry['source_hash'])
                 self.assertEqual(metadata['source_format'], 'geo')
-            path = Path(directory) / 'saved.gsproj'
+            path = Path(directory) / 'saved.jorvik'
             save_project(path, self.geometry, [(batch, 'Generated', True)], state())
             manifest, _ = load_project(path)
             self.assertEqual(manifest['geometry']['import_options'], options)

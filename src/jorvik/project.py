@@ -12,6 +12,10 @@ from .topology import validate_topology
 from .regions import validate_regions
 from .export import atomic_write, to_xarray
 
+PROJECT_EXTENSION = ".jorvik"
+PROJECT_EXTENSIONS = (PROJECT_EXTENSION, ".gsproj")
+PROJECT_FILTER = "Jorvik project (*.jorvik *.gsproj)"
+
 
 def save_project(path, geometry, areas, state):
     if geometry is None:
@@ -67,21 +71,21 @@ def save_project(path, geometry, areas, state):
 
 
 def create_empty_project(path, *, overwrite=False):
-    """Create a geometry-free .gsproj without Qt; refuse replacement by default.
+    """Create a geometry-free .jorvik document without Qt; refuse replacement by default.
 
     Return the path. Both creation and explicit replacement are atomic. Existing
     project readers continue to accept populated schema 1/2 documents unchanged.
     """
     path = Path(path)
-    if path.suffix.lower() != '.gsproj':
-        raise ValueError('Choose a Jorvik project (.gsproj) file.')
+    if path.suffix.lower() not in PROJECT_EXTENSIONS:
+        raise ValueError('Choose a Jorvik project (.jorvik or legacy .gsproj) file.')
     if overwrite:
         save_project(path, None, [], {})
     else:
         # Publish a complete archive with an exclusive hard link. Unlike a prior
         # exists() check plus replace(), this cannot clobber a concurrent creator.
         with tempfile.TemporaryDirectory(prefix='.jorvik-create-', dir=path.parent) as directory:
-            temporary = Path(directory) / 'empty.gsproj'
+            temporary = Path(directory) / ('empty' + PROJECT_EXTENSION)
             save_project(temporary, None, [], {})
             os.link(temporary, path)
     return path
