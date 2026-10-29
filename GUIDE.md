@@ -182,9 +182,18 @@ uv run --group docs zensical build --strict
 ```
 
 The build writes ignored output to `site/`. The site uses local theme assets and
-system fonts. A deployment URL is deliberately unset until a hosting destination
-is chosen. The build-only GitHub workflow checks generated pages and strict link
-validation; it does not publish the site.
+system fonts. The published URL is <https://praksharma.github.io/Jorvik/>, set as
+`site_url` in `zensical.toml` so project-site links and canonical URLs include
+`/Jorvik/`.
+
+In GitHub Settings → Pages, select **GitHub Actions** as the source. The
+Documentation workflow checks canonical pages and performs a clean, strict
+Zensical build. Pull requests are checked without deploying. Matching pushes to
+`main`, or a manual workflow run on `main`, upload the generated `site/` artifact
+and deploy it through the `github-pages` environment. Publication must upload
+`site/`, not raw `docs/` Markdown: GitHub's default Markdown/Jekyll rendering does
+not apply the Zensical theme. After pushing, check both the build and deploy jobs
+in Actions; changing the Pages source alone does not publish a Zensical build.
 
 Keep detailed workflows, architecture, limitations and test instructions in this
 `GUIDE.md`. Edit `TODO.md` for the roadmap and `THIRD_PARTY.md` for attribution.

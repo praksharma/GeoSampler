@@ -353,7 +353,9 @@ are outside the initial release; use the verified neutral export formats instead
 ## Documentation
 
 - [x] Add a searchable Zensical site with focused user/developer pages, light/dark
-      themes, canonical-guide sync checks and a strict build-only CI workflow.
+      themes, canonical-guide sync checks and a strict CI build.
+- [x] Publish built Zensical assets to GitHub Pages from `main`, using the project
+      site URL, a Pages artifact and a deployment job; keep pull requests build-only.
 
 ## Project persistence and sampled-area editing
 
