@@ -5,8 +5,8 @@ import time
 import unittest
 from unittest.mock import patch
 from PySide6.QtCore import QSettings, QThread, QTimer
-from geosampler.app import MainWindow
-from geosampler.project import save_project, load_project
+from jorvik.app import MainWindow
+from jorvik.project import save_project, load_project
 import test_shell
 
 FIXTURE=Path(__file__).resolve().parents[1]/'examples/geometries/cfdbench/annulus_unstructured.geo'
@@ -32,7 +32,7 @@ class ProjectWorkerUiTest(unittest.TestCase):
                     self.assertIsNot(QThread.currentThread(),self.app.thread())
                     time.sleep(.12)
                     return save_project(*args)
-                with patch('geosampler.project_ui.save_project',side_effect=slow_save):
+                with patch('jorvik.project_ui.save_project',side_effect=slow_save):
                     self.assertTrue(window.save_project())
                 timer.stop()
                 self.assertGreater(len(ticks),5)
@@ -43,13 +43,13 @@ class ProjectWorkerUiTest(unittest.TestCase):
                     self.assertIsNot(QThread.currentThread(),self.app.thread())
                     time.sleep(.12)
                     return load_project(*args)
-                with patch('geosampler.project_ui.load_project',side_effect=slow_load):
+                with patch('jorvik.project_ui.load_project',side_effect=slow_load):
                     window.load_project_file(path)
                 timer.stop();self.assertGreater(len(ticks),5)
                 self.assertIsNone(window.project_io)
                 self.assertTrue(window.open_action.isEnabled())
                 before=path.read_bytes()
-                with patch('geosampler.project_ui.save_project',side_effect=OSError('Disk full')),patch('geosampler.project_ui.QMessageBox.warning') as warning:
+                with patch('jorvik.project_ui.save_project',side_effect=OSError('Disk full')),patch('jorvik.project_ui.QMessageBox.warning') as warning:
                     self.assertFalse(window.save_project());warning.assert_called_once()
                 self.assertEqual(path.read_bytes(),before)
                 self.assertTrue(window.sampling.isEnabled());self.assertIsNone(window.project_io)

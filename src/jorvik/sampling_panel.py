@@ -228,7 +228,7 @@ class SamplingPanel(QWidget):
         process.started.connect(lambda: self.write_request(process, request))
         process.finished.connect(lambda code, status: self.finished(process, code))
         process.errorOccurred.connect(lambda error: self.finished(process, -1) if error == QProcess.ProcessError.FailedToStart else None)
-        process.start(sys.executable, ['-m', 'geosampler.sampling'])
+        process.start(sys.executable, ['-m', 'jorvik.sampling'])
 
     def write_request(self, process, request):
         process.write(json.dumps(request).encode())

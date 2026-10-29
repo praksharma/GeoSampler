@@ -27,7 +27,7 @@ def main():
     for mode in modes:
         request['compute_mode']=mode
         started=time.perf_counter()
-        process=subprocess.run([sys.executable,'-m','geosampler.sampling'],
+        process=subprocess.run([sys.executable,'-m','jorvik.sampling'],
                                input=json.dumps(request),capture_output=True,text=True,check=True,timeout=300)
         elapsed=time.perf_counter()-started
         result=json.loads(process.stdout)

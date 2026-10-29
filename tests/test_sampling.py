@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 import numpy as np
-from geosampler.geometry import load_geometry
-from geosampler.sampling import METHODS, sample_geometry, unit_points
+from jorvik.geometry import load_geometry
+from jorvik.sampling import METHODS, sample_geometry, unit_points
 
 FIXTURES=Path(__file__).resolve().parents[1]/'examples/geometries/cfdbench'
 

@@ -8,10 +8,10 @@ import json
 from pathlib import Path
 import numpy as np
 import xarray as xr
-from geosampler.geometry import load_geometry
-from geosampler.regions import put_region, region_snapshot
-from geosampler.sampling import sample_geometry
-from geosampler.export import export_samples
+from jorvik.geometry import load_geometry
+from jorvik.regions import put_region, region_snapshot
+from jorvik.sampling import sample_geometry
+from jorvik.export import export_samples
 
 
 def run(output_dir, count=128):

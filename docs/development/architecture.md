@@ -7,7 +7,7 @@ physical groups and per-entity display tessellation. Supported inputs are `.geo`
 STEP (`.step`, `.stp`), OCC BREP (`.brep`) and IGES (`.iges`, `.igs`). Geometry is retained in the source file; display triangles
 are not a substitute for exact geometry in future sampling.
 
-`src/geosampler/app.py` owns the Qt window, menus, docks and settings.
+`src/jorvik/app.py` owns the Qt window, menus, docks and settings.
 `viewport.py` embeds Qt WebEngine and exposes a small QWebChannel bridge.
 `viewport3d/` contains local Three.js assets, OrbitControls and the orientation gizmo.
 No CDN is required. Structural models, solvers, supports, loads and force diagrams

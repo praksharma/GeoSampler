@@ -30,7 +30,7 @@ Full results: entity-check.json. Reproduce from the repository root:
 uv run --with gmsh==4.15.2 python scripts/check_geo_entities.py
 ```
 
-GeoSampler now imports these files through File → Open Geometry and supports
+Jorvik now imports these files through File → Open Geometry and supports
 separate face and edge selection tools. The renderer preserves `(dimension, tag)`:
 triangle hits map to faces, line-segment hits map to edges. Physical groups
 combine entities without removing their individual identities. Tags identify
@@ -47,4 +47,4 @@ in the applicable upstream case README. No case-specific citation is supplied
 in these standalone geometry scripts; do not invent one.
 
 These third-party fixtures retain their own licence, separately from
-GeoSampler's application code.
+Jorvik's application code.

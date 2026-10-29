@@ -4,11 +4,11 @@
 
 Start with **Gmsh** as the geometry backend. The first milestone is opening the
 existing `.geo` fixtures and reliably selecting their original faces and edges
-in GeoSampler. Sampling comes after that workflow is verified.
+in Jorvik. Sampling comes after that workflow is verified.
 
 Keep the geometry interface independent of Qt, Three.js and Gmsh-specific objects
 so a direct Open CASCADE/OCP backend can be evaluated later. Prepared CAD already
-contains the boundary partitions; GeoSampler does not create or edit them.
+contains the boundary partitions; Jorvik does not create or edit them.
 
 ## Completed foundation
 

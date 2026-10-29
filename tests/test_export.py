@@ -9,7 +9,7 @@ from unittest.mock import patch
 import numpy as np
 import xarray as xr
 
-from geosampler.export import export_samples, to_xarray
+from jorvik.export import export_samples, to_xarray
 
 
 def batch(label='boundary', count=3, tag=6):

@@ -56,7 +56,7 @@ def load_project(path):
     with zipfile.ZipFile(path) as archive:
         manifest=json.loads(archive.read('manifest.json'))
         if manifest.get('schema_version') not in (1, 2):
-            raise ValueError('Unsupported GeoSampler project version.')
+            raise ValueError('Unsupported Jorvik project version.')
         extension=manifest['source_extension']
         if extension not in FORMATS:
             raise ValueError('Unsupported geometry format in project.')

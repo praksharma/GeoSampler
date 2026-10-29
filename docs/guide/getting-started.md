@@ -6,7 +6,7 @@ Use Python 3.12 or newer and [uv](https://docs.astral.sh/uv/). From a checkout:
 
 ```sh
 uv sync --locked
-uv run geosampler examples/geometries/cfdbench/annulus_unstructured.geo
+uv run jorvik examples/geometries/cfdbench/annulus_unstructured.geo
 ```
 
 1. Select **Edges** (`E`) and click an inner arc. Ctrl/Shift-click adds arcs.
@@ -20,7 +20,7 @@ uv run geosampler examples/geometries/cfdbench/annulus_unstructured.geo
 A boundary region labels CAD entities; a dataset label names one generated point
 cloud. Region edits do not rewrite previously generated dataset provenance.
 Use **Help → Graphics information** to inspect the renderer. For compatibility,
-try `uv run geosampler --software-rendering`.
+try `uv run jorvik --software-rendering`.
 
 The fixture's arc IDs are specific to that geometry. With unfamiliar CAD, inspect
 original faces/edges and confirm domain validity and sampling accuracy first.

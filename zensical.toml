@@ -1,7 +1,7 @@
 [project]
-site_name = "GeoSampler"
+site_name = "Jorvik"
 site_description = "Geometry-aware sampling for PINNs and scientific machine learning"
-copyright = "GeoSampler · AGPL-3.0-only"
+copyright = "Jorvik · AGPL-3.0-only"
 docs_dir = "docs"
 site_dir = "site"
 nav = [

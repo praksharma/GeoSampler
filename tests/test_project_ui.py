@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from PySide6.QtCore import QSettings,Qt
-from geosampler.app import MainWindow
-from geosampler.area_editor import AreaEditor
+from jorvik.app import MainWindow
+from jorvik.area_editor import AreaEditor
 import test_shell
 
 FIXTURE=Path(__file__).resolve().parents[1]/'examples/geometries/cad/cylinder.brep'
@@ -33,7 +33,7 @@ class ProjectUiTest(unittest.TestCase):
                 window.sampling.point_size.setValue(9);window.sampling.through.setChecked(False)
                 window.hide_faces([2]);window.show_sampled_area('wall')
                 window.parametrisation_setup={'schema_version':1,'source_hash':window.geometry['source_hash'],'scope':'regions','regions':['wall'],'translation':[1.,0.,0.]}
-                with patch('geosampler.project_ui.QFileDialog.getSaveFileName',return_value=(str(project),'GeoSampler project (*.gsproj)')):
+                with patch('jorvik.project_ui.QFileDialog.getSaveFileName',return_value=(str(project),'Jorvik project (*.gsproj)')):
                     window.save_project_action.trigger()
                     self.wait_for(project.exists)
                 self.assertEqual(window.project_path,project)
@@ -71,7 +71,7 @@ class ProjectUiTest(unittest.TestCase):
                 embedded=Path(window.geometry['source']);bytes_before=embedded.read_bytes();embedded.write_bytes(bytes_before+b'\nchanged')
                 before=json.dumps(window.sampling.batches)
                 editor=AreaEditor(window,'inlet');editor.label.setText('failed');editor.count.setValue(256)
-                with patch('geosampler.sampling_panel.QMessageBox.warning') as warning:
+                with patch('jorvik.sampling_panel.QMessageBox.warning') as warning:
                     editor.apply();self.wait_for(lambda:window.sampling.process is None);warning.assert_called_once()
                 self.assertEqual(json.dumps(window.sampling.batches),before)
                 self.assertNotIn('failed',window.sampled_areas.areas)
@@ -83,7 +83,7 @@ class ProjectUiTest(unittest.TestCase):
                 # A corrupt project must not replace the active document.
                 bad=Path(directory)/'bad.gsproj';bad.write_bytes(b'invalid project')
                 document=window.geometry['document']
-                with patch('geosampler.project_ui.QMessageBox.warning') as warning:
+                with patch('jorvik.project_ui.QMessageBox.warning') as warning:
                     window.load_project_file(bad);warning.assert_called_once()
                 self.assertEqual(window.geometry['document'],document)
                 self.assertEqual(json.dumps(window.sampling.batches),before)

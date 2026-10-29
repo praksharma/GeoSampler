@@ -10,8 +10,8 @@ import numpy as np
 import xarray as xr
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtGui import QColor
-from geosampler.app import MainWindow
-from geosampler.export import export_samples
+from jorvik.app import MainWindow
+from jorvik.export import export_samples
 import test_shell
 
 FIXTURE = Path(__file__).resolve().parents[1] / 'examples/geometries/cfdbench/annulus_unstructured.geo'
@@ -36,7 +36,7 @@ class RegionsUiTest(unittest.TestCase):
                 self.assertIsNotNone(dialog)
                 self.assertFalse(window.save_project_action.isEnabled())
                 dialog.label.setText('inner / 壁')
-                with patch('geosampler.regions_panel.QColorDialog.getColor', return_value=QColor('#ffc857')):
+                with patch('jorvik.regions_panel.QColorDialog.getColor', return_value=QColor('#ffc857')):
                     dialog.colour_button.click()
                 dialog.save_button.click()
                 first = deepcopy(window.boundary_regions[0])
@@ -80,7 +80,7 @@ class RegionsUiTest(unittest.TestCase):
                 self.assertEqual(window.boundary_regions[0]['id'], first['id'])
                 self.assertIn('renamed', window.properties.text())
                 project = Path(directory) / 'regions.gsproj'
-                with patch('geosampler.project_ui.QFileDialog.getSaveFileName', return_value=(str(project),'GeoSampler project (*.gsproj)')):
+                with patch('jorvik.project_ui.QFileDialog.getSaveFileName', return_value=(str(project),'Jorvik project (*.gsproj)')):
                     window.save_project()
                     self.wait_for(project.exists)
                 expected = deepcopy(window.boundary_regions)
@@ -101,7 +101,7 @@ class RegionsUiTest(unittest.TestCase):
                 # A failed import preserves assignments and samples; a successful one clears assignments.
                 before = deepcopy(window.boundary_regions)
                 bad = Path(directory) / 'bad.geo'; bad.write_text('not valid CAD')
-                with patch('geosampler.app.QMessageBox.warning') as warning:
+                with patch('jorvik.app.QMessageBox.warning') as warning:
                     window.load_geometry(bad); self.wait_for(lambda: window.import_process is None)
                     warning.assert_called_once()
                 self.assertEqual(window.boundary_regions, before)

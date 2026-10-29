@@ -14,17 +14,17 @@ using the locked dependencies and validated on macOS arm64 (27.0.1), Python
 verified packaged offline assets/licences, rendered samples in the real WebGL
 viewport, and checked CAD topology, boundary/interior sampling, normals,
 NetCDF/NPZ round trips and project restoration. The command-line entry point
-reported `GeoSampler 0.1.0.dev0`. This does not establish Windows/Linux support.
+reported `Jorvik 0.1.0.dev0`. This does not establish Windows/Linux support.
 
 To repeat installation validation from a checkout on macOS/Linux:
 
 ```sh
 uv build
-uv export --locked --no-dev --no-emit-project --no-hashes --output-file /tmp/geosampler-requirements.txt
-uv venv /tmp/geosampler-release-check
-uv pip install --python /tmp/geosampler-release-check/bin/python -r /tmp/geosampler-requirements.txt dist/geosampler-0.1.0.dev0-py3-none-any.whl
-/tmp/geosampler-release-check/bin/python -I scripts/validate_installation.py --installed --render
-/tmp/geosampler-release-check/bin/geosampler --version
+uv export --locked --no-dev --no-emit-project --no-hashes --output-file /tmp/jorvik-requirements.txt
+uv venv /tmp/jorvik-release-check
+uv pip install --python /tmp/jorvik-release-check/bin/python -r /tmp/jorvik-requirements.txt dist/jorvik-0.1.0.dev0-py3-none-any.whl
+/tmp/jorvik-release-check/bin/python -I scripts/validate_installation.py --installed --render
+/tmp/jorvik-release-check/bin/jorvik --version
 ```
 
 `--render` needs a desktop session; omit it for geometry/export checks alone.
@@ -36,7 +36,7 @@ each installation check. The locked dependency versions used here were Gmsh
 Run the attributed annulus example from a checkout:
 
 ```sh
-uv run python examples/sample_annulus.py --output-dir /tmp/geosampler-annulus --count 128
+uv run python examples/sample_annulus.py --output-dir /tmp/jorvik-annulus --count 128
 ```
 
 It creates independent `inner`, `outer` and `interior` arrays in `annulus.nc` and

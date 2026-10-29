@@ -12,7 +12,7 @@ IDs and SHA-256 checksums are recorded in provenance.json.
 | cylinder.brep | benchmarks/brep/cylinder.brep | One solid, 3 faces, 3 edges | Curved OCC BREP boundary and volume sampling |
 | cube1000.igs | benchmarks/iges/cube1000.igs | 6 faces, 24 edges, no solid | IGES boundary-only workflow; do not infer closure from appearance |
 
-Open any file with File → Open Geometry or pass its path to `uv run geosampler`.
+Open any file with File → Open Geometry or pass its path to `uv run jorvik`.
 Select faces/edges and generate samples normally. Interior sampling is available
 only when solid volumes exist. Zero-length CAD edges remain in the tree for
 inspection, but cannot supply points. These files are downloaded originals,
@@ -22,6 +22,6 @@ not generated or converted versions of the existing `.geo` examples.
 
 Credit the Gmsh project and preserve included LICENSE.txt and provenance.json.
 The upstream licence is GPL version 2 or later with the Gmsh linking exception;
-these fixtures retain that licence separately from GeoSampler's application code.
+these fixtures retain that licence separately from Jorvik's application code.
 The complete unmodified upstream models are included here as their source.
 No CAD exporter-specific face-name or unit preservation guarantee is implied.

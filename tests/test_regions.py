@@ -3,9 +3,9 @@ from copy import deepcopy
 from pathlib import Path
 import tempfile
 import unittest
-from geosampler.regions import put_region, validate_regions, region_snapshot
-from geosampler.geometry import load_geometry
-from geosampler.project import save_project, load_project
+from jorvik.regions import put_region, validate_regions, region_snapshot
+from jorvik.geometry import load_geometry
+from jorvik.project import save_project, load_project
 from test_project import state
 
 FIXTURE = Path(__file__).resolve().parents[1] / 'examples/geometries/cfdbench/annulus_unstructured.geo'

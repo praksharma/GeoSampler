@@ -2,8 +2,8 @@
 from pathlib import Path
 import tempfile
 import unittest
-from geosampler.geometry import load_geometry
-from geosampler.sampling import sample_geometry
+from jorvik.geometry import load_geometry
+from jorvik.sampling import sample_geometry
 
 FIXTURES=Path(__file__).resolve().parents[1]/'examples/geometries/cfdbench'
 

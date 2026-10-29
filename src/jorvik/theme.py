@@ -26,7 +26,7 @@ THEMES = {"light": LIGHT, "dark": DARK}
 
 def theme_name():
     application = QApplication.instance()
-    name = application.property("geosampler_theme") if application else None
+    name = application.property("jorvik_theme") if application else None
     return name if name in THEMES else "light"
 
 
@@ -36,9 +36,9 @@ def colors():
 
 def configure_theme(application, name="light"):
     name = name if isinstance(name, str) and name in THEMES else "light"
-    if application.property("geosampler_theme") == name:
+    if application.property("jorvik_theme") == name:
         return
-    application.setProperty("geosampler_theme", name)
+    application.setProperty("jorvik_theme", name)
     application.setStyle("Fusion")
     c = THEMES[name]
     palette = QPalette()

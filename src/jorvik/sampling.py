@@ -243,7 +243,7 @@ def sample_geometry(request):
     if mode not in ('multicore','reproducible') or isinstance(threads,bool) or not isinstance(threads,int) or not 1<=threads<=64:
         raise ValueError('Invalid CPU sampling settings.')
     threads = threads if mode=='multicore' else 1
-    gmsh.initialize(['geosampler'], readConfigFiles=False)
+    gmsh.initialize(['jorvik'], readConfigFiles=False)
     try:
         gmsh.option.setNumber('General.Terminal', 0)
         from .cad_import import open_source

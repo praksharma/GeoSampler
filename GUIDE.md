@@ -1,4 +1,4 @@
-# GeoSampler guide
+# Jorvik guide
 
 ## Development preview and release checks
 
@@ -14,17 +14,17 @@ using the locked dependencies and validated on macOS arm64 (27.0.1), Python
 verified packaged offline assets/licences, rendered samples in the real WebGL
 viewport, and checked CAD topology, boundary/interior sampling, normals,
 NetCDF/NPZ round trips and project restoration. The command-line entry point
-reported `GeoSampler 0.1.0.dev0`. This does not establish Windows/Linux support.
+reported `Jorvik 0.1.0.dev0`. This does not establish Windows/Linux support.
 
 To repeat installation validation from a checkout on macOS/Linux:
 
 ```sh
 uv build
-uv export --locked --no-dev --no-emit-project --no-hashes --output-file /tmp/geosampler-requirements.txt
-uv venv /tmp/geosampler-release-check
-uv pip install --python /tmp/geosampler-release-check/bin/python -r /tmp/geosampler-requirements.txt dist/geosampler-0.1.0.dev0-py3-none-any.whl
-/tmp/geosampler-release-check/bin/python -I scripts/validate_installation.py --installed --render
-/tmp/geosampler-release-check/bin/geosampler --version
+uv export --locked --no-dev --no-emit-project --no-hashes --output-file /tmp/jorvik-requirements.txt
+uv venv /tmp/jorvik-release-check
+uv pip install --python /tmp/jorvik-release-check/bin/python -r /tmp/jorvik-requirements.txt dist/jorvik-0.1.0.dev0-py3-none-any.whl
+/tmp/jorvik-release-check/bin/python -I scripts/validate_installation.py --installed --render
+/tmp/jorvik-release-check/bin/jorvik --version
 ```
 
 `--render` needs a desktop session; omit it for geometry/export checks alone.
@@ -36,7 +36,7 @@ each installation check. The locked dependency versions used here were Gmsh
 Run the attributed annulus example from a checkout:
 
 ```sh
-uv run python examples/sample_annulus.py --output-dir /tmp/geosampler-annulus --count 128
+uv run python examples/sample_annulus.py --output-dir /tmp/jorvik-annulus --count 128
 ```
 
 It creates independent `inner`, `outer` and `interior` arrays in `annulus.nc` and
@@ -59,7 +59,7 @@ Use Python 3.12 or newer and [uv](https://docs.astral.sh/uv/). From a checkout:
 
 ```sh
 uv sync --locked
-uv run geosampler examples/geometries/cfdbench/annulus_unstructured.geo
+uv run jorvik examples/geometries/cfdbench/annulus_unstructured.geo
 ```
 
 1. Select **Edges** (`E`) and click an inner arc. Ctrl/Shift-click adds arcs.
@@ -73,7 +73,7 @@ uv run geosampler examples/geometries/cfdbench/annulus_unstructured.geo
 A boundary region labels CAD entities; a dataset label names one generated point
 cloud. Region edits do not rewrite previously generated dataset provenance.
 Use **Help → Graphics information** to inspect the renderer. For compatibility,
-try `uv run geosampler --software-rendering`.
+try `uv run jorvik --software-rendering`.
 
 The fixture's arc IDs are specific to that geometry. With unfamiliar CAD, inspect
 original faces/edges and confirm domain validity and sampling accuracy first.
@@ -103,7 +103,7 @@ physical groups and per-entity display tessellation. Supported inputs are `.geo`
 STEP (`.step`, `.stp`), OCC BREP (`.brep`) and IGES (`.iges`, `.igs`). Geometry is retained in the source file; display triangles
 are not a substitute for exact geometry in future sampling.
 
-`src/geosampler/app.py` owns the Qt window, menus, docks and settings.
+`src/jorvik/app.py` owns the Qt window, menus, docks and settings.
 `viewport.py` embeds Qt WebEngine and exposes a small QWebChannel bridge.
 `viewport3d/` contains local Three.js assets, OrbitControls and the orientation gizmo.
 No CDN is required. Structural models, solvers, supports, loads and force diagrams
@@ -368,7 +368,7 @@ use internal `_gs_region_N` names. Original labels are preserved in metadata.
 The `_gs_` prefix is reserved for dimensions, entity-tag arrays and metadata.
 No user label is silently lost or changed in the metadata.
 
-The xarray interface is `geosampler.export.to_xarray(batches)`. NetCDF is written
+The xarray interface is `jorvik.export.to_xarray(batches)`. NetCDF is written
 through xarray's SciPy engine as NetCDF3 64-bit offset, using the existing SciPy
 dependency. The Dataset has only coordinate arrays as data variables; `xyz` and
 `_gs_entity_tags_N` and optional `_gs_normals_N` arrays are coordinates. Per-variable attributes include `label`,

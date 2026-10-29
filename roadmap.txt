@@ -1,6 +1,6 @@
 I'd position this as a general-purpose geometry-aware sampling tool for scientific machine learning, rather than exclusively a PINN utility. That keeps it relevant to PINNs, neural operators, surrogate modelling, and other mesh-free methods.
 
-For now, I'll use GeoSampler as a working name. We can rename it later.
+For now, I'll use Jorvik as a working name. We can rename it later.
 
 ## Suggested GitHub description
 
@@ -8,15 +8,15 @@ An open-source GUI for geometry-aware point sampling in 2D and 3D domains. Impor
 
 ## Proposed README.md
 
-# GeoSampler
+# Jorvik
 
 **Geometry-aware point sampling for scientific machine learning**
 
-GeoSampler is an open-source desktop application for generating spatial and parametric point datasets from 2D and 3D geometries.
+Jorvik is an open-source desktop application for generating spatial and parametric point datasets from 2D and 3D geometries.
 
 It provides an interactive graphical interface for importing CAD geometries, identifying and labelling boundaries, configuring sampling strategies, refining point distributions, and exporting structured datasets.
 
-GeoSampler is designed primarily for **Physics-Informed Neural Networks (PINNs)**, but it is independent of any particular machine-learning framework, governing equation, or numerical solver.
+Jorvik is designed primarily for **Physics-Informed Neural Networks (PINNs)**, but it is independent of any particular machine-learning framework, governing equation, or numerical solver.
 
 ## Motivation
 
@@ -24,7 +24,7 @@ Generating training points for PINNs is straightforward in simple rectangular do
 
 Curved boundaries, internal holes, complex surfaces, and non-uniform sampling requirements often demand custom geometry-specific scripts.
 
-GeoSampler aims to eliminate much of this repetitive work through a reusable, interactive point-generation environment.
+Jorvik aims to eliminate much of this repetitive work through a reusable, interactive point-generation environment.
 
 ## Core Features
 
@@ -46,7 +46,7 @@ GeoSampler aims to eliminate much of this repetitive work through a reusable, in
 - Allow regions to remain unlabelled.
 - Independently configure sampling for labelled and unlabelled regions.
 
-GeoSampler treats boundary labels as metadata. It does not interpret or enforce physical boundary conditions.
+Jorvik treats boundary labels as metadata. It does not interpret or enforce physical boundary conditions.
 
 ### 3. Sampling Methods
 
@@ -91,7 +91,7 @@ Potential capabilities include:
 
 #### Parametric Visualisation
 
-Instead of directly visualising high-dimensional geometries, GeoSampler will provide:
+Instead of directly visualising high-dimensional geometries, Jorvik will provide:
 
 - Interactive parameter sliders.
 - Arrows indicating geometric movement.
@@ -115,7 +115,7 @@ Exported data may include:
 - Sampling configurations and metadata.
 - Random seeds for reproducibility.
 
-GeoSampler does not calculate PDE solutions or prescribe boundary values. Solution data, if required, must be obtained independently.
+Jorvik does not calculate PDE solutions or prescribe boundary values. Solution data, if required, must be obtained independently.
 
 ### 7. Project Management
 
@@ -213,7 +213,7 @@ GeoSampler does not calculate PDE solutions or prescribe boundary values. Soluti
 
 ## Project Status
 
-GeoSampler is in the planning and early development stage. Features and milestones may evolve as the project progresses.
+Jorvik is in the planning and early development stage. Features and milestones may evolve as the project progresses.
 
 ## Citation
 

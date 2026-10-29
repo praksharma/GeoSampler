@@ -7,9 +7,9 @@ import unittest
 import zipfile
 
 import numpy as np
-from geosampler.geometry import load_geometry
-from geosampler.project import save_project, load_project
-from geosampler.sampling import sample_geometry
+from jorvik.geometry import load_geometry
+from jorvik.project import save_project, load_project
+from jorvik.sampling import sample_geometry
 from test_project import state
 
 # Original test geometry: the same explicit construction works in both kernels.

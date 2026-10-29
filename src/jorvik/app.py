@@ -1,4 +1,4 @@
-"""GeoSampler desktop shell, adapted from PyniteGUI's Qt layout."""
+"""Jorvik desktop shell, adapted from PyniteGUI's Qt layout."""
 import argparse
 import sys
 from pathlib import Path
@@ -22,7 +22,7 @@ from .project_ui import ProjectActions
 class MainWindow(ProjectActions, QMainWindow):
     def __init__(self, settings=None):
         super().__init__()
-        self.settings = settings if settings is not None else QSettings("GeoSampler", "GeoSampler")
+        self.settings = settings if settings is not None else QSettings("Jorvik", "Jorvik")
         self._close_requested = False
         self._handling_close = False
         self.geometry = None
@@ -39,7 +39,7 @@ class MainWindow(ProjectActions, QMainWindow):
         self.selected_area = None
         self.icon_actions = []
         self.items = {}
-        self.setWindowTitle("GeoSampler — Untitled")
+        self.setWindowTitle("Jorvik — Untitled")
         self.resize(1280, 820)
         self.setMinimumSize(820, 560)
         self.view = Viewport(self)
@@ -181,7 +181,7 @@ class MainWindow(ProjectActions, QMainWindow):
             self.theme_group.addAction(action)
         help_menu = self.menuBar().addMenu("&Help")
         help_menu.addAction("Graphics information", self.graphics_information)
-        help_menu.addAction("About GeoSampler", self.about)
+        help_menu.addAction("About Jorvik", self.about)
         self.resizeDocks([self.geometry_dock, self.properties_dock], [240, 260], Qt.Orientation.Horizontal)
         if self.settings.contains("geometry"):
             self.restoreGeometry(self.settings.value("geometry"))
@@ -523,7 +523,7 @@ class MainWindow(ProjectActions, QMainWindow):
         self.view.web.page().runJavaScript("JSON.stringify(window.geoViewer.diagnostics())", received)
 
     def about(self):
-        QMessageBox.about(self, "About GeoSampler", f"GeoSampler {__version__}\nGeometry-aware sampling for PINNs.\n\nGmsh geometry import with face and edge selection. Seven sampling methods with boundary/interior previews.\nAdapted from PyniteGUI; licensed under AGPL-3.0-only.\nThree.js is distributed under its MIT licence.")
+        QMessageBox.about(self, "About Jorvik", f"Jorvik {__version__}\nGeometry-aware sampling for PINNs.\n\nGmsh geometry import with face and edge selection. Seven sampling methods with boundary/interior previews.\nAdapted from PyniteGUI; licensed under AGPL-3.0-only.\nThree.js is distributed under its MIT licence.")
 
     def open_geometry(self):
         path, _ = QFileDialog.getOpenFileName(self, "Open geometry", "", FILE_FILTER)
@@ -541,7 +541,7 @@ class MainWindow(ProjectActions, QMainWindow):
         self.statusBar().showMessage("Opening " + Path(path).name + "…")
         process.finished.connect(lambda code, status: self.import_finished(process, code))
         process.errorOccurred.connect(lambda error: self.import_failed_start(process) if error == QProcess.ProcessError.FailedToStart else None)
-        process.start(sys.executable, ["-m", "geosampler.geometry", str(path)])
+        process.start(sys.executable, ["-m", "jorvik.geometry", str(path)])
 
     def import_failed_start(self, process):
         if self.import_process is process:
@@ -610,7 +610,7 @@ class MainWindow(ProjectActions, QMainWindow):
         self.view.set_geometry_visibility({'hiddenFaces': [], 'isolatedFaces': None})
         self.view.set_geometry(geometry)
         self.sampling.geometry_loaded()
-        self.setWindowTitle("GeoSampler — " + geometry["name"])
+        self.setWindowTitle("Jorvik — " + geometry["name"])
         self.update_selection()
         faces = sum(e["dimension"] == 2 for e in geometry["entities"])
         edges = sum(e["dimension"] == 1 for e in geometry["entities"])
@@ -718,9 +718,9 @@ class MainWindow(ProjectActions, QMainWindow):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="GeoSampler desktop application")
+    parser = argparse.ArgumentParser(description="Jorvik desktop application")
     parser.add_argument("geometry", nargs="?", help="Gmsh, STEP, Open CASCADE BREP or IGES file to open")
-    parser.add_argument("--version", action="version", version=f"GeoSampler {__version__}")
+    parser.add_argument("--version", action="version", version=f"Jorvik {__version__}")
     parser.add_argument("--software-rendering", action="store_true", help="Use software rendering for the 3D viewport")
     args = parser.parse_args()
     configure_graphics("software" if args.software_rendering else "auto")
@@ -729,10 +729,10 @@ def main():
     code = None
     try:
         application = QApplication([sys.argv[0]])
-        application.setApplicationName("GeoSampler")
-        application.setOrganizationName("GeoSampler")
+        application.setApplicationName("Jorvik")
+        application.setOrganizationName("Jorvik")
         shutdown.start(application)
-        settings = QSettings("GeoSampler", "GeoSampler")
+        settings = QSettings("Jorvik", "Jorvik")
         configure_theme(application, settings.value("theme", "light"))
         install_window_controls(application)
         window = MainWindow(settings)

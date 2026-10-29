@@ -26,7 +26,7 @@ use internal `_gs_region_N` names. Original labels are preserved in metadata.
 The `_gs_` prefix is reserved for dimensions, entity-tag arrays and metadata.
 No user label is silently lost or changed in the metadata.
 
-The xarray interface is `geosampler.export.to_xarray(batches)`. NetCDF is written
+The xarray interface is `jorvik.export.to_xarray(batches)`. NetCDF is written
 through xarray's SciPy engine as NetCDF3 64-bit offset, using the existing SciPy
 dependency. The Dataset has only coordinate arrays as data variables; `xyz` and
 `_gs_entity_tags_N` and optional `_gs_normals_N` arrays are coordinates. Per-variable attributes include `label`,

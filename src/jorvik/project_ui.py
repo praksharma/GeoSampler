@@ -114,7 +114,7 @@ class ProjectActions(RecoveryActions):
             return False
         path=self.project_path if not save_as else None
         if not path:
-            filename,_=QFileDialog.getSaveFileName(self,'Save GeoSampler project',self.geometry['name']+'.gsproj','GeoSampler project (*.gsproj)')
+            filename,_=QFileDialog.getSaveFileName(self,'Save Jorvik project',self.geometry['name']+'.gsproj','Jorvik project (*.gsproj)')
             if not filename:return False
             path=Path(filename)
             if not path.suffix:path=path.with_suffix('.gsproj')
@@ -130,7 +130,7 @@ class ProjectActions(RecoveryActions):
                 state = self.project_state(camera)
                 self.project_io_call(lambda: save_project(path,self.geometry,areas,state))
                 self.project_path=Path(path)
-                self.setWindowTitle('GeoSampler — '+self.project_path.name)
+                self.setWindowTitle('Jorvik — '+self.project_path.name)
                 self.statusBar().showMessage('Project saved: '+str(path))
                 self.mark_project_clean()
                 self.clear_recovery()
@@ -151,7 +151,7 @@ class ProjectActions(RecoveryActions):
 
     def open_project(self):
         if self.project_busy():return
-        filename,_=QFileDialog.getOpenFileName(self,'Open GeoSampler project','','GeoSampler project (*.gsproj)')
+        filename,_=QFileDialog.getOpenFileName(self,'Open Jorvik project','','Jorvik project (*.gsproj)')
         if filename:self.load_project_file(filename)
 
     def load_project_file(self, filename):
@@ -173,7 +173,7 @@ class ProjectActions(RecoveryActions):
                 valid=False
             if self.project_cache and path.is_relative_to(self.project_cache.name):valid=False
             if not valid:
-                cache=tempfile.TemporaryDirectory(prefix='geosampler-project-')
+                cache=tempfile.TemporaryDirectory(prefix='jorvik-project-')
                 path=Path(cache.name)/('model'+manifest['source_extension'])
                 self.project_io_call(lambda: path.write_bytes(source))
             geometry['source']=str(path)
@@ -222,13 +222,13 @@ class ProjectActions(RecoveryActions):
             self.sampling.summary.setText(f'Restored {len(self.sampling.batches)} generated areas.')
             if state.get('layout'):self.restoreState(QByteArray.fromHex(state['layout'].encode()))
             if state.get('camera'):self.view.set_camera_state(state['camera'])
-            self.setWindowTitle('GeoSampler — '+self.project_path.name)
+            self.setWindowTitle('Jorvik — '+self.project_path.name)
             self.statusBar().showMessage('Project opened: '+str(filename))
             if 'recovery_origin' in state:
                 self.project_path = None  # Recovery always requires an explicit Save As destination.
                 self.recovered_from = Path(filename)
                 self.saved_digest = None
-                self.setWindowTitle('GeoSampler — Recovered unsaved project')
+                self.setWindowTitle('Jorvik — Recovered unsaved project')
             else:
                 self.mark_project_clean()
             if not valid and manifest['source_extension']=='.geo':

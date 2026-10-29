@@ -72,10 +72,10 @@ def to_xarray(batches):
             variables[name].attrs['normals_coordinate'] = normal_name
             record['normals'] = normal_name
         records.append(record)
-    manifest = {'schema_version': 2, 'geosampler_version': __version__,
+    manifest = {'schema_version': 2, 'jorvik_version': __version__,
                 'coordinate_units': 'Source geometry units (unspecified)', 'datasets': records}
     return xr.Dataset(variables, coords=coordinates, attrs={
-        'schema_version': 2, 'geosampler_version': __version__,
+        'schema_version': 2, 'jorvik_version': __version__,
         'coordinate_units': manifest['coordinate_units'],
         'metadata_json': json.dumps(manifest, ensure_ascii=False, allow_nan=False)})
 

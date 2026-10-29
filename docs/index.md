@@ -1,6 +1,6 @@
 # Geometry to training data
 
-GeoSampler turns prepared CAD into reproducible, labelled point datasets for
+Jorvik turns prepared CAD into reproducible, labelled point datasets for
 PINNs and scientific machine learning. Keep the relationship between each point
 and its original face, edge or interior region, then bring the data into your own
 training code.
@@ -18,7 +18,7 @@ training code.
 4. **Inspect and keep.** Preview several datasets, save the workspace and export
    independent coordinate arrays with entity tags and applicable outward normals.
 
-CAD already contains the boundary partitions. GeoSampler labels and samples them;
+CAD already contains the boundary partitions. Jorvik labels and samples them;
 physics, prescribed boundary values and solvers belong in downstream tools.
 
 ## Find what you need

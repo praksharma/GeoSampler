@@ -9,11 +9,11 @@ import zipfile
 
 import numpy as np
 import xarray as xr
-from geosampler.geometry import load_geometry
-from geosampler.sampling import sample_geometry
-from geosampler.export import export_samples, to_xarray
-from geosampler.project import save_project, load_project
-from geosampler.parametrisation import transform_batches
+from jorvik.geometry import load_geometry
+from jorvik.sampling import sample_geometry
+from jorvik.export import export_samples, to_xarray
+from jorvik.project import save_project, load_project
+from jorvik.parametrisation import transform_batches
 from test_project import state
 
 ROOT = Path(__file__).resolve().parents[1] / 'examples/geometries'

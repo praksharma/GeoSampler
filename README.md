@@ -1,4 +1,4 @@
-# GeoSampler
+# Jorvik
 
 Geometry-aware point sampling for PINNs and scientific machine learning.
 
@@ -16,18 +16,18 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 
 ```sh
 uv sync
-uv run geosampler
+uv run jorvik
 ```
 
 Open a fixture directly:
 
 ```sh
-uv run geosampler examples/geometries/cfdbench/annulus_unstructured.geo
+uv run jorvik examples/geometries/cfdbench/annulus_unstructured.geo
 ```
 
 Select existing faces or edges, save boundary regions, generate datasets in
 **Sampling**, then export NetCDF/NPZ or save a full `.gsproj` workspace.
-For graphics compatibility, try `uv run geosampler --software-rendering`.
+For graphics compatibility, try `uv run jorvik --software-rendering`.
 
 ## Documentation
 
@@ -48,7 +48,7 @@ recovery, performance and development instructions. See the
 
 Import prepared CAD → label existing edges/faces → sample regions and interior →
 export xarray/NetCDF or NumPy NPZ datasets. CAD already contains the required
-boundary partitions. GeoSampler does not prescribe boundary values or solve PDEs.
+boundary partitions. Jorvik does not prescribe boundary values or solve PDEs.
 
 Try the reproducible [annulus export example](examples/sample_annulus.py).
 See [GUIDE.md](GUIDE.md), [TODO.md](TODO.md), and the original [roadmap](roadmap.txt).

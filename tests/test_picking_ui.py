@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from PySide6.QtCore import QSettings
 from PySide6.QtTest import QSignalSpy
-from geosampler.app import MainWindow
+from jorvik.app import MainWindow
 import test_shell
 
 

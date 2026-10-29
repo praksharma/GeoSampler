@@ -30,7 +30,7 @@ def load_geometry(filename):
     path = Path(filename).resolve()
     if not path.is_file():
         raise ValueError("Geometry file does not exist.")
-    gmsh.initialize(["geosampler"], readConfigFiles=False)
+    gmsh.initialize(["jorvik"], readConfigFiles=False)
     try:
         gmsh.option.setNumber("General.Terminal", 0)
         source_format = open_source(gmsh, path)

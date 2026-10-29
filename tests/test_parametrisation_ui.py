@@ -10,7 +10,7 @@ from PySide6.QtCore import QSettings, Qt
 from PySide6.QtTest import QTest
 import numpy as np
 
-from geosampler.app import MainWindow
+from jorvik.app import MainWindow
 import test_shell
 
 FIXTURE = Path(__file__).resolve().parents[1] / 'examples/geometries/cad/cylinder.brep'
@@ -60,7 +60,7 @@ class ParametrisationUiTest(unittest.TestCase):
                         window.open_parametrisation()
                         dialog = window.parametrisation_dialog
                         with patch.object(window.sampling, 'start') as generate, patch(
-                            'geosampler.parametrisation_panel.export_configuration'
+                            'jorvik.parametrisation_panel.export_configuration'
                         ) as export:
                             dialog.offsets[0].setValue(2)
                             self.assertIn('Parameters changed', dialog.status.text())
@@ -91,7 +91,7 @@ class ParametrisationUiTest(unittest.TestCase):
                         self.wait_for(lambda: self.diagnostics(window)['sampleOffsets']['wall'] == [0, 0, 0])
                         # Export after reset must also evaluate the identity configuration.
                         path = Path(directory) / 'reset.npz'
-                        with patch('geosampler.parametrisation_panel.QFileDialog.getSaveFileName',
+                        with patch('jorvik.parametrisation_panel.QFileDialog.getSaveFileName',
                                    return_value=(str(path), 'NumPy archive (*.npz)')):
                             dialog.export_configuration()
                         with np.load(path, allow_pickle=False) as data:

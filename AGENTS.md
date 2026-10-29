@@ -20,7 +20,7 @@ rewrite existing commit history unless the user explicitly requests it.
 - Update `TODO.md` as features are implemented or new work is identified.
 - Commit completed, verified changes in coherent groups with their tests.
 
-## GeoSampler scope
+## Jorvik scope
 
 - Build a geometry-aware sampling desktop application for PINNs and scientific ML.
 - CAD models already contain the separate edges/faces needed for boundary regions.

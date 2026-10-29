@@ -6,10 +6,10 @@ import tempfile
 import unittest
 import numpy as np
 import xarray as xr
-from geosampler.geometry import load_geometry
-from geosampler.sampling import sample_geometry
-from geosampler.export import export_samples
-from geosampler.cad_import import open_source
+from jorvik.geometry import load_geometry
+from jorvik.sampling import sample_geometry
+from jorvik.export import export_samples
+from jorvik.cad_import import open_source
 
 FIXTURES=Path(__file__).resolve().parents[1]/'examples/geometries/cad'
 

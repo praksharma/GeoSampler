@@ -6,8 +6,8 @@ import unittest
 from unittest.mock import patch
 from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QMessageBox
-from geosampler.app import MainWindow
-from geosampler.project import load_project
+from jorvik.app import MainWindow
+from jorvik.project import load_project
 import test_shell
 
 FIXTURE=Path(__file__).resolve().parents[1]/'examples/geometries/cfdbench/annulus_unstructured.geo'
@@ -40,19 +40,19 @@ class RecoveryUiTest(unittest.TestCase):
                 restored,_=load_project(recovery)
                 self.assertEqual(restored['areas'][0]['area'],original[0])
                 first.sampling.seed.setValue(77)
-                with patch('geosampler.recovery.save_project',side_effect=OSError('Disk full')):
+                with patch('jorvik.recovery.save_project',side_effect=OSError('Disk full')):
                     self.assertFalse(first.autosave())
                 self.assertEqual(recovery.read_bytes(),before)
                 self.assertIn('previous copy retained',first.statusBar().currentMessage())
                 # Another live window must not offer or delete the first one's copy.
                 second=MainWindow(settings());others.append(second);second.show()
-                with patch('geosampler.recovery.QMessageBox.question') as question:
+                with patch('jorvik.recovery.QMessageBox.question') as question:
                     second.offer_recovery();question.assert_not_called()
                 second.close()
                 # Simulate a process interruption by releasing ownership without clean close.
                 first.recovery_timer.stop();first.recovery_lock.unlock();first.recovery_lock=None
                 third=MainWindow(settings());others.append(third)
-                with patch('geosampler.recovery.QMessageBox.question',return_value=QMessageBox.StandardButton.Yes):
+                with patch('jorvik.recovery.QMessageBox.question',return_value=QMessageBox.StandardButton.Yes):
                     third.show();third.offer_recovery()
                     self.assertIsNotNone(third.geometry)
                 self.assertEqual(third.sampling.batches,original)
@@ -60,17 +60,17 @@ class RecoveryUiTest(unittest.TestCase):
                 self.assertTrue(third.recovery_path.is_file())
                 self.assertFalse(recovery.exists())
                 path=Path(directory)/'kept.gsproj'
-                with patch('geosampler.project_ui.QFileDialog.getSaveFileName',return_value=(str(path),'GeoSampler project (*.gsproj)')):
+                with patch('jorvik.project_ui.QFileDialog.getSaveFileName',return_value=(str(path),'Jorvik project (*.gsproj)')):
                     self.assertTrue(third.save_project())
                 self.assertTrue(path.is_file());self.assertFalse(third.has_unsaved_changes())
                 self.assertEqual((Path(directory)/'original.gsproj').read_bytes(),original_file)
                 self.assertFalse(third.recovery_path.exists())
                 third.sampling.seed.setValue(123)
                 self.assertTrue(third.autosave())
-                with patch('geosampler.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Cancel):
+                with patch('jorvik.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Cancel):
                     self.assertFalse(third.close())
                 self.assertTrue(third.recovery_path.exists())
-                with patch('geosampler.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Discard):
+                with patch('jorvik.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Discard):
                     self.assertTrue(third.close())
                 self.assertFalse(third.recovery_path.exists())
             finally:

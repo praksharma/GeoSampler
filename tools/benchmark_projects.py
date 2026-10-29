@@ -11,8 +11,8 @@ import sys
 import tempfile
 import time
 import numpy as np
-from geosampler.geometry import load_geometry
-from geosampler.project import save_project, load_project
+from jorvik.geometry import load_geometry
+from jorvik.project import save_project, load_project
 
 
 def run(count):
@@ -34,7 +34,7 @@ def run(count):
            'controls':{'method':'random','compute_mode':'reproducible','resolution':32,'count':min(count,50000),
                        'seed':42,'cpu_threads':1,'label':'inner_1','target':'selection'},
            'layout':None,'camera':None,'parametrisation':None,'boundary_regions':[]}
-    with tempfile.TemporaryDirectory(prefix='geosampler-project-benchmark-') as directory:
+    with tempfile.TemporaryDirectory(prefix='jorvik-project-benchmark-') as directory:
         path=Path(directory)/'large.gsproj'
         started=time.perf_counter();save_project(path,geometry,[(batch,'Generated',True)],state)
         save_seconds=time.perf_counter()-started

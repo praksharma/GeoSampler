@@ -13,21 +13,21 @@ import time
 
 
 def validate(installed=False, render=False):
-    import geosampler
+    import jorvik
     import numpy as np
     import xarray as xr
-    from geosampler.geometry import load_geometry
-    from geosampler.sampling import sample_geometry
-    from geosampler.export import export_samples
-    package = Path(geosampler.__file__).resolve()
+    from jorvik.geometry import load_geometry
+    from jorvik.sampling import sample_geometry
+    from jorvik.export import export_samples
+    package = Path(jorvik.__file__).resolve()
     if installed and (not package.is_relative_to(Path(sys.prefix).resolve()) or 'site-packages' not in package.parts):
         raise RuntimeError('This check imported a checkout instead of the isolated installation: ' + str(package))
-    assets = resources.files('geosampler') / 'viewport3d'
+    assets = resources.files('jorvik') / 'viewport3d'
     for name in ('index.html','viewer.js','gizmo.js','vendor/three.module.js',
                  'vendor/three.core.js','vendor/OrbitControls.js','vendor/lines/LineSegments2.js','vendor/LICENSE'):
         if not (assets / name).is_file():
             raise RuntimeError('Missing offline viewport asset: ' + name)
-    with tempfile.TemporaryDirectory(prefix='geosampler-validation-') as directory:
+    with tempfile.TemporaryDirectory(prefix='jorvik-validation-') as directory:
         source = Path(directory) / 'box.geo'
         source.write_text('SetFactory("OpenCASCADE");\nBox(1)={0,0,0,1,1,1};\n')
         geometry = load_geometry(source)
@@ -53,9 +53,9 @@ def validate(installed=False, render=False):
         if render:
             from PySide6.QtCore import QSettings
             from PySide6.QtWidgets import QApplication
-            from geosampler.graphics import configure_graphics
-            from geosampler.app import MainWindow
-            from geosampler.project import save_project, load_project
+            from jorvik.graphics import configure_graphics
+            from jorvik.app import MainWindow
+            from jorvik.project import save_project, load_project
             configure_graphics('software')
             app = QApplication.instance() or QApplication([])
             app.setQuitOnLastWindowClosed(False)
@@ -86,7 +86,7 @@ def validate(installed=False, render=False):
                 if restored['areas'][0]['area'] != boundary: raise RuntimeError('Project normal round trip failed.')
             finally:
                 window.mark_project_clean(); window.close(); app.processEvents()
-    return {'version':geosampler.__version__, 'python':sys.version.split()[0], 'package':str(package),
+    return {'version':jorvik.__version__, 'python':sys.version.split()[0], 'package':str(package),
             'desktop_rendered':render,
             'dependencies':{name:metadata.version(name) for name in ('gmsh','numpy','scipy','xarray','PySide6')},
             'checks':['offline assets','CAD topology','boundary/interior sampling','outward normals','NetCDF/NPZ round trips']

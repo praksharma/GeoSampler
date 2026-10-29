@@ -1,5 +1,5 @@
 [project]
-name = "geosampler"
+name = "jorvik"
 version = "0.1.0.dev0"
 description = "Geometry-aware point sampling for PINNs and scientific machine learning"
 readme = "README.md"
@@ -9,14 +9,14 @@ license-files = ["LICENSE"]
 dependencies = ["PySide6==6.11.2", "gmsh==4.15.2", "numpy>=2.2,<3", "scipy>=1.15,<2", "xarray>=2025.1,<2027"]
 
 [project.scripts]
-geosampler = "geosampler:main"
+jorvik = "jorvik:main"
 
 [build-system]
 requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/geosampler"]
+packages = ["src/jorvik"]
 
 [dependency-groups]
 docs = [

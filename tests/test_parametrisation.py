@@ -8,7 +8,7 @@ from unittest.mock import patch
 import numpy as np
 import xarray as xr
 from test_export import batch
-from geosampler.parametrisation import (transform_batches, validate_setup, save_setup,
+from jorvik.parametrisation import (transform_batches, validate_setup, save_setup,
                                         load_setup, export_configuration)
 
 

@@ -7,9 +7,9 @@ from pathlib import Path
 
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QApplication, QDockWidget, QLabel, QMessageBox
-from geosampler.app import MainWindow
-from geosampler.theme import configure_theme
-from geosampler.graphics import configure_graphics
+from jorvik.app import MainWindow
+from jorvik.theme import configure_theme
+from jorvik.graphics import configure_graphics
 
 
 class ShellTest(unittest.TestCase):
@@ -19,7 +19,7 @@ class ShellTest(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
         cls.app.setQuitOnLastWindowClosed(False)
         configure_theme(cls.app, 'light')
-        discard = patch('geosampler.project_ui.QMessageBox.question', return_value=QMessageBox.StandardButton.Discard)
+        discard = patch('jorvik.project_ui.QMessageBox.question', return_value=QMessageBox.StandardButton.Discard)
         discard.start()
         cls.addClassCleanup(discard.stop)
 

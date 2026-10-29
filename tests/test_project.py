@@ -5,9 +5,9 @@ import json
 import zipfile
 import unittest
 from unittest.mock import patch
-from geosampler.project import save_project,load_project
-from geosampler.geometry import load_geometry
-from geosampler.sampling import sample_geometry
+from jorvik.project import save_project,load_project
+from jorvik.geometry import load_geometry
+from jorvik.sampling import sample_geometry
 
 FIXTURE=Path(__file__).resolve().parents[1]/'examples/geometries/cfdbench/annulus_unstructured.geo'
 

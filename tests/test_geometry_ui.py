@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 from PySide6.QtCore import QSettings, Qt
-from geosampler.app import MainWindow
+from jorvik.app import MainWindow
 import unittest
 import test_shell
 
@@ -89,7 +89,7 @@ class GeometryTest(unittest.TestCase):
                 self.assertEqual(window.selection,before)
                 # Backend failures leave the current document and selection intact.
                 previous=window.geometry['document']
-                with patch('geosampler.app.QMessageBox.warning') as warning:
+                with patch('jorvik.app.QMessageBox.warning') as warning:
                     window.load_geometry(Path(directory)/'missing.geo')
                     self.wait_for(lambda: window.import_process is None)
                     warning.assert_called_once()
@@ -122,13 +122,13 @@ class GeometryTest(unittest.TestCase):
                 import time
                 end=time.monotonic()+.3
                 while time.monotonic()<end:self.app.processEvents()
-                window.grab().save('/tmp/geosampler-import-preview.png')
+                window.grab().save('/tmp/jorvik-import-preview.png')
                 # Sampling successive sphere faces automatically suggests unique labels.
                 window.sampling.target.setCurrentIndex(0)
                 window.sampling.label.setText('boundary')
                 window.sampling.count.setValue(128)
                 window.sampling.method.setCurrentIndex(window.sampling.method.findData('random'))
-                with patch('geosampler.sampling_panel.QMessageBox.information') as information:
+                with patch('jorvik.sampling_panel.QMessageBox.information') as information:
                     for index,tag in enumerate((1, 6)):
                         window.pick_entity(2,tag,False)
                         window.sampling.start()
@@ -217,11 +217,11 @@ class GeometryTest(unittest.TestCase):
                 from PySide6.QtGui import QColor
                 window.show_sampled_area('boundary_1')
                 window.isolate_action.setChecked(True)
-                with patch('geosampler.app.QColorDialog.getColor',return_value=QColor('#ffc857')):
+                with patch('jorvik.app.QColorDialog.getColor',return_value=QColor('#ffc857')):
                     window.area_menu('boundary_1').actions()[1].trigger()
                 self.wait_for(lambda: self.javascript(window,
                     "window.geoViewer.diagnostics().sampleColours.boundary_1")=='#ffc857')
-                with patch('geosampler.app.QInputDialog.getText',return_value=('outlet',True)):
+                with patch('jorvik.app.QInputDialog.getText',return_value=('outlet',True)):
                     window.area_menu('boundary_1').actions()[0].trigger()
                 self.assertEqual(window.selected_area,'outlet')
                 self.assertEqual(window.isolated_label(),'outlet')
@@ -231,7 +231,7 @@ class GeometryTest(unittest.TestCase):
                 self.wait_for(lambda: self.javascript(window,
                     "window.geoViewer.diagnostics().sampleColours.outlet")=='#ffc857')
                 for answer in [('boundary',True),('',True),('ignored',False)]:
-                    with patch('geosampler.app.QInputDialog.getText',return_value=answer), patch('geosampler.app.QMessageBox.warning') as warning:
+                    with patch('jorvik.app.QInputDialog.getText',return_value=answer), patch('jorvik.app.QMessageBox.warning') as warning:
                         window.rename_area('outlet')
                         self.assertEqual(warning.call_count, int(answer[1]))
                     self.assertIn('outlet',window.sampled_areas.items)
@@ -242,7 +242,7 @@ class GeometryTest(unittest.TestCase):
                 import xarray as xr
                 import numpy as np
                 nc_path = Path(directory)/'sphere_samples.nc'
-                with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=(str(nc_path),'NetCDF (*.nc)')):
+                with patch('jorvik.app.QFileDialog.getSaveFileName', return_value=(str(nc_path),'NetCDF (*.nc)')):
                     window.export_action.trigger()
                 with xr.open_dataset(nc_path, engine='scipy') as exported:
                     self.assertEqual(set(exported.data_vars),{'boundary','outlet'})
@@ -250,14 +250,14 @@ class GeometryTest(unittest.TestCase):
                         np.testing.assert_array_equal(exported[batch['label']].values,batch['coordinates'])
                         self.assertEqual(json.loads(exported[batch['label']].attrs['metadata_json'])['colour'],batch['colour'])
                 npz_path = Path(directory)/'sphere_samples'
-                with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=(str(npz_path),'NumPy archive (*.npz)')):
+                with patch('jorvik.app.QFileDialog.getSaveFileName', return_value=(str(npz_path),'NumPy archive (*.npz)')):
                     window.sampling.export.click()
                 with np.load(npz_path.with_suffix('.npz'), allow_pickle=False) as exported:
                     self.assertEqual(exported['outlet'].shape,(128,3))
-                with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=('','')), patch('geosampler.export.export_samples') as exporter:
+                with patch('jorvik.app.QFileDialog.getSaveFileName', return_value=('','')), patch('jorvik.export.export_samples') as exporter:
                     window.export_samples()
                     exporter.assert_not_called()
-                with patch('geosampler.app.QFileDialog.getSaveFileName', return_value=(str(nc_path),'NetCDF (*.nc)')), patch('geosampler.export.export_samples',side_effect=OSError('Disk full')), patch('geosampler.app.QMessageBox.warning') as warning:
+                with patch('jorvik.app.QFileDialog.getSaveFileName', return_value=(str(nc_path),'NetCDF (*.nc)')), patch('jorvik.export.export_samples',side_effect=OSError('Disk full')), patch('jorvik.app.QMessageBox.warning') as warning:
                     window.export_samples()
                     warning.assert_called_once()
                 # Explicit translation preview is reversible and never accumulates.
@@ -283,15 +283,15 @@ class GeometryTest(unittest.TestCase):
                 self.assertEqual(json.loads(self.javascript(window,'JSON.stringify(window.geoViewer.diagnostics().sampleOffsets.outlet)')),[0,0,0])
                 self.assertEqual(json.dumps(window.sampling.batches),originals)
                 setup_path = Path(directory)/'translation.json'
-                with patch('geosampler.parametrisation_panel.QFileDialog.getSaveFileName', return_value=(str(setup_path),'JSON (*.json)')):
+                with patch('jorvik.parametrisation_panel.QFileDialog.getSaveFileName', return_value=(str(setup_path),'JSON (*.json)')):
                     dialog.save()
                 dialog.offsets[0].setValue(9)
-                with patch('geosampler.parametrisation_panel.QFileDialog.getOpenFileName', return_value=(str(setup_path),'JSON (*.json)')):
+                with patch('jorvik.parametrisation_panel.QFileDialog.getOpenFileName', return_value=(str(setup_path),'JSON (*.json)')):
                     dialog.load()
                 self.assertEqual(dialog.offsets[0].value(),.3)
                 self.assertIsNone(window.view.translation_preview)
                 translated_path=Path(directory)/'translated.nc'
-                with patch('geosampler.parametrisation_panel.QFileDialog.getSaveFileName', return_value=(str(translated_path),'NetCDF (*.nc)')):
+                with patch('jorvik.parametrisation_panel.QFileDialog.getSaveFileName', return_value=(str(translated_path),'NetCDF (*.nc)')):
                     dialog.export_configuration()
                 with xr.open_dataset(translated_path,engine='scipy') as exported:
                     np.testing.assert_array_equal(exported.boundary.values,np.asarray(window.sampling.batches[0]['coordinates'])+[.3,-.1,.2])
@@ -299,7 +299,7 @@ class GeometryTest(unittest.TestCase):
                     np.testing.assert_array_equal(exported['_gs_translation'],[.3,-.1,.2])
                 dialog.tabs.setCurrentIndex(0)
                 self.app.processEvents()
-                dialog.grab().save('/tmp/geosampler-parametrisation-preview.png')
+                dialog.grab().save('/tmp/jorvik-parametrisation-preview.png')
                 dialog.preview()
                 dialog.reject()
                 self.wait_for(lambda: json.loads(self.javascript(window,'JSON.stringify(window.geoViewer.diagnostics().sampleOffsets.boundary)'))==[0,0,0])
@@ -339,7 +339,7 @@ class GeometryTest(unittest.TestCase):
             try:
                 self.wait_for(lambda:window.view.is_ready)
                 for name in ('t20_data.step','cube_filet.stp','cylinder.brep','cube1000.igs'):
-                    with patch('geosampler.app.QMessageBox.warning') as warning:
+                    with patch('jorvik.app.QMessageBox.warning') as warning:
                         window.load_geometry(cad/name)
                         self.wait_for(lambda:window.import_process is None)
                         warning.assert_not_called()
@@ -357,6 +357,6 @@ class GeometryTest(unittest.TestCase):
                     self.wait_for(lambda:window.sampling.process is None)
                     self.assertEqual(window.sampling.batches[0]['count'],32)
                     self.wait_for(lambda:self.javascript(window,'window.geoViewer.diagnostics().sampleCount')==32)
-                window.grab().save('/tmp/geosampler-iges-preview.png')
+                window.grab().save('/tmp/jorvik-iges-preview.png')
                 self.assertTrue(self.javascript(window,'window.geoFailure===null'))
             finally:window.close()

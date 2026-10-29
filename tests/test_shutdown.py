@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from PySide6.QtCore import QSettings, QTimer
 from PySide6.QtWidgets import QMessageBox
-from geosampler.app import MainWindow
+from jorvik.app import MainWindow
 import test_shell
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -27,7 +27,7 @@ class ShutdownProcessTest(unittest.TestCase):
                 code='''import sys,signal
 from pathlib import Path
 from PySide6.QtCore import QTimer
-from geosampler import app
+from jorvik import app
 marker,mode=sys.argv[1:3]
 sys.argv=[sys.argv[0],'--software-rendering']
 if mode=='startup':
@@ -82,17 +82,17 @@ class DeferredCloseTest(unittest.TestCase):
                 window.show();window.load_geometry(FIXTURE)
                 self.wait_for(lambda:window.import_process is None)
                 window.sampling.seed.setValue(77)
-                with patch('geosampler.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Cancel) as question:
+                with patch('jorvik.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Cancel) as question:
                     QTimer.singleShot(10,window.close)
                     window.project_io_call(lambda:time.sleep(.12))
                     self.wait_for(lambda:question.called)
                     self.assertTrue(window.isVisible())
                     self.assertFalse(window._close_requested)
                     question.assert_called_once()
-                with patch('geosampler.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Discard):
+                with patch('jorvik.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Discard):
                     window.close()
             finally:
-                with patch('geosampler.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Discard):window.close()
+                with patch('jorvik.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Discard):window.close()
 
     def test_close_during_save_runs_after_success(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -102,13 +102,13 @@ class DeferredCloseTest(unittest.TestCase):
                 window.load_geometry(FIXTURE);self.wait_for(lambda:window.import_process is None)
                 window.sampling.seed.setValue(17)
                 window.project_path=Path(directory)/'saved.gsproj'
-                from geosampler.project import save_project
+                from jorvik.project import save_project
                 def slow_save(*args):time.sleep(.12);return save_project(*args)
-                with patch('geosampler.project_ui.save_project',side_effect=slow_save):
+                with patch('jorvik.project_ui.save_project',side_effect=slow_save):
                     QTimer.singleShot(30,window.close)
                     self.assertTrue(window.save_project())
                 self.wait_for(lambda:not window.isVisible())
                 self.assertTrue(window.project_path.is_file())
                 self.assertFalse(window._close_requested)
             finally:
-                with patch('geosampler.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Discard):window.close()
+                with patch('jorvik.project_ui.QMessageBox.question',return_value=QMessageBox.StandardButton.Discard):window.close()
