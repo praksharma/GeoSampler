@@ -133,6 +133,12 @@ for BREP, STEP and IGES. Start there without introducing a second geometry backe
 - [x] **1. STEP (`.step`, `.stp`)**: first neutral-format implementation; retain
       analytic/curved geometry, original topology and closed-solid definitions.
       A surface STEP and a solid STEP fixture are covered.
+- [ ] Support 2D interior sampling on validated planar STEP sheets, without
+      requiring a solid volume. Verify coplanarity and trimmed-face containment,
+      including inner holes; reject non-planar or ambiguous domains clearly.
+      Add rectangle, rotated-plane, trimmed/holey-sheet and non-planar rejection
+      fixtures, plus sampling, export and GUI coverage. Preserve current solid
+      sampling and `.geo` behaviour; do not imply general shell interior support.
 - [ ] Evaluate AP203/AP214/AP242 and richer product metadata; do not promise
       face-level labels will survive every exporter/importer combination.
 - [x] **2. Open CASCADE BREP (`.brep`)**: support OCC's native topology format;
