@@ -110,7 +110,10 @@ Acceptance checks:
 - [x] Save/load full sampling configurations and regenerate datasets.
 - [x] Development-preview installation validation, runnable export example and
       release documentation (macOS arm64 / Python 3.12).
-- [ ] Validate Windows/Linux installations and graphics before a cross-platform release.
+- [x] Verify Python 3.14.8 / PySide6 6.12.0 compatibility, isolated and shared-root
+      installation, offline viewport, automatic NVIDIA rendering, and preservation
+      of an existing host application's dependency versions; retain Python 3.12 support.
+- [ ] Validate Windows and broader Linux installations/graphics before a cross-platform release.
 
 ## 6. Broader CAD import — next priority
 

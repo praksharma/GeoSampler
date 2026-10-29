@@ -8,11 +8,14 @@ NVIDIA EGL/Vulkan driver selection, and exclusion of Mesa Vulkan layers. These
 settings apply only to this application process and respect existing graphics
 environment overrides. Do not pass `--software-rendering` for GPU rendering.
 
-PySide6 is pinned to 6.11.2, matching PyniteGUI. On this host, Qt 6.12 stalled
-with the automatic NVIDIA setup, while 6.11.2 successfully reported
-`ANGLE (NVIDIA Corporation, Quadro RTX 4000/PCIe/SSE2, OpenGL ES 3.2)` through
-the actual WebGL context. Check Help → Graphics information for the observed
-renderer. The software fallback remains available for other machines.
+PySide6 is now pinned to 6.12.0 for shared-environment compatibility. An earlier
+Quadro RTX 4000 check found a Qt 6.12 startup stall and used 6.11.2 successfully.
+On 29 October 2026, automatic rendering was verified with Python 3.14.8 and
+PySide6 6.12.0 on the current Linux/Wayland host: the live WebGL context reported
+`ANGLE (NVIDIA Corporation, NVIDIA GeForce RTX 3060 Laptop GPU/PCIe/SSE2, OpenGL ES 3.2)`
+with no lost context. This does not establish Qt 6.12 behaviour on the earlier
+Quadro system. Check Help → Graphics information for the observed renderer;
+`--software-rendering` remains available when a host's graphics setup needs it.
 
 Close the main window or use File → Quit (`Ctrl+Q`). Terminal `Ctrl+C` (SIGINT)
 and SIGTERM are routed through the same close workflow rather than raising

@@ -30,8 +30,38 @@ uv pip install --python /tmp/jorvik-release-check/bin/python -r /tmp/jorvik-requ
 `--render` needs a desktop session; omit it for geometry/export checks alone.
 The validator uses temporary files and isolated Qt settings. It does not change
 an existing user's project or settings. Use a fresh environment directory for
-each installation check. The locked dependency versions used here were Gmsh
-4.15.2, NumPy 2.5.3, SciPy 1.18.1, xarray 2026.9.0 and PySide6 6.11.2.
+each installation check. The historical macOS check above used Gmsh 4.15.2,
+NumPy 2.5.3, SciPy 1.18.1, xarray 2026.9.0 and PySide6 6.11.2.
+
+On 29 October 2026, Linux/Wayland compatibility was checked with Python 3.14.8
+and PySide6 6.12.0. All 53 Jorvik tests passed in a separate compatibility
+environment. The built wheel was then installed into an existing application's
+Python 3.14 environment with its existing packages constrained; NumPy 2.5.2,
+PySide6 6.12.0 and the CUDA-enabled Torch installation remained unchanged.
+All 53 tests also passed using the package installed in the shared environment.
+The installed-package validator passed with Gmsh 4.15.2, SciPy 1.18.1 and
+xarray 2026.9.0, including the offline viewport, sampling, normals, NetCDF/NPZ
+round trips and project restoration. Fourteen focused host-application tests
+also passed, including CUDA numerical checks, dataset import, sampling controls
+and model-file lifecycle. The standalone Python 3.12.15 environment passed the
+same geometry/export/rendering validator with PySide6 6.12.0. These are local
+installation checks; Windows and broader distribution coverage remain pending.
+
+Jorvik still requires Python 3.12 or newer. Its standalone `.python-version`
+remains 3.12; this does not require another application's environment to use
+3.12. Install Jorvik with the receiving environment's interpreter. From a source
+checkout, build the wheel, then target that existing environment explicitly:
+
+```sh
+uv build
+uv pip install --python /path/to/host/.venv/bin/python dist/jorvik-0.1.0.dev0-py3-none-any.whl
+uv pip check --python /path/to/host/.venv/bin/python
+```
+
+Jorvik pins PySide6 6.12.0 to share Qt with the receiving application. Include
+Jorvik in that application's dependency declarations if its environment manager
+should retain/reinstall it during future synchronisation. A wheel installation
+is a snapshot; rebuild and reinstall it after making Jorvik changes.
 
 Run the attributed annulus example from a checkout:
 
@@ -217,11 +247,14 @@ NVIDIA EGL/Vulkan driver selection, and exclusion of Mesa Vulkan layers. These
 settings apply only to this application process and respect existing graphics
 environment overrides. Do not pass `--software-rendering` for GPU rendering.
 
-PySide6 is pinned to 6.11.2, matching PyniteGUI. On this host, Qt 6.12 stalled
-with the automatic NVIDIA setup, while 6.11.2 successfully reported
-`ANGLE (NVIDIA Corporation, Quadro RTX 4000/PCIe/SSE2, OpenGL ES 3.2)` through
-the actual WebGL context. Check Help → Graphics information for the observed
-renderer. The software fallback remains available for other machines.
+PySide6 is now pinned to 6.12.0 for shared-environment compatibility. An earlier
+Quadro RTX 4000 check found a Qt 6.12 startup stall and used 6.11.2 successfully.
+On 29 October 2026, automatic rendering was verified with Python 3.14.8 and
+PySide6 6.12.0 on the current Linux/Wayland host: the live WebGL context reported
+`ANGLE (NVIDIA Corporation, NVIDIA GeForce RTX 3060 Laptop GPU/PCIe/SSE2, OpenGL ES 3.2)`
+with no lost context. This does not establish Qt 6.12 behaviour on the earlier
+Quadro system. Check Help → Graphics information for the observed renderer;
+`--software-rendering` remains available when a host's graphics setup needs it.
 
 Close the main window or use File → Quit (`Ctrl+Q`). Terminal `Ctrl+C` (SIGINT)
 and SIGTERM are routed through the same close workflow rather than raising
