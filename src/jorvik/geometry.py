@@ -5,7 +5,7 @@ import math
 import sys
 from pathlib import Path
 from uuid import uuid4
-from .cad_import import open_source
+from .cad_import import open_source, import_options
 from .domains import domain_kind
 
 
@@ -79,7 +79,8 @@ def load_geometry(filename):
         geometry = {"document": uuid4().hex, "source": str(path), "name": path.name,
                 "dimension": 2 if interior_domain == "planar" else 3,
                 "interior_domain": interior_domain,
-                "source_format": source_format, "solid_count": len(gmsh.model.getEntities(3)),
+                "source_format": source_format, "import_options": import_options(gmsh, source_format),
+                "solid_count": len(gmsh.model.getEntities(3)),
                 "coordinate_units": "Source geometry units (unspecified)",
                 "source_hash": hashlib.sha256(path.read_bytes()).hexdigest(),
                 "entities": entities, "groups": groups, "topology": topology}

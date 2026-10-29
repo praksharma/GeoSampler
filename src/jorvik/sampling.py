@@ -246,8 +246,11 @@ def sample_geometry(request):
     gmsh.initialize(['jorvik'], readConfigFiles=False)
     try:
         gmsh.option.setNumber('General.Terminal', 0)
-        from .cad_import import open_source
+        from .cad_import import open_source, import_options
         source_format = open_source(gmsh, path)
+        options = import_options(gmsh, source_format)
+        if request.get("import_options", options) != options:
+            raise ValueError("Geometry import settings changed. Reopen the geometry before sampling.")
         gmsh.option.setNumber('General.NumThreads', threads)
         for axis in (1,2,3):
             gmsh.option.setNumber(f'Mesh.MaxNumThreads{axis}D',threads)
@@ -323,7 +326,7 @@ def sample_geometry(request):
                 'entities': [[dim, t] for t in tags], 'method': method, 'seed': seed,
                 'requested_count': count, 'count': len(points), 'coordinates': points.tolist(),
                 'entity_tags': point_tags.astype(int).tolist(), 'entity_dimension': dim,
-                'source': str(path), 'source_hash': digest, 'source_format': source_format, 'notes': notes,
+                'source': str(path), 'source_hash': digest, 'source_format': source_format, 'import_options': options, 'notes': notes,
                 'resolution': request.get('resolution', 32), 'compute_mode':mode,
                 'cpu_threads':threads, 'mesh_algorithm_2d':int(gmsh.option.getNumber('Mesh.Algorithm')),
                 'mesh_algorithm_3d':int(gmsh.option.getNumber('Mesh.Algorithm3D'))}

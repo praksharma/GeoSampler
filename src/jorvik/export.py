@@ -10,6 +10,7 @@ import xarray as xr
 
 from . import __version__
 from .normals import validate_normals
+from .cad_import import validate_import_metadata
 
 _PREFIX = '_gs_'
 _RESERVED = {'xyz', 'file', 'allow_pickle', 'like'}
@@ -28,6 +29,7 @@ def to_xarray(batches):
     labels, records = set(), []
     source_identity = None
     for index, batch in enumerate(batches):
+        validate_import_metadata(batch)
         label = batch['label']
         if not isinstance(label, str) or not label.strip():
             raise ValueError('Each dataset must have a non-empty label.')

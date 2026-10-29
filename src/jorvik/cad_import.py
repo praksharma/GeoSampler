@@ -32,3 +32,32 @@ def open_source(gmsh, filename):
             os.close(saved_stdout)
         gmsh.model.occ.synchronize()
     return kind
+
+
+def import_options(gmsh, source_format):
+    """Record Jorvik's loader arguments, not inferred CAD exporter settings."""
+    options = {'backend': 'gmsh', 'backend_version': gmsh.__version__,
+               'read_config_files': False,
+               'loader': 'open' if source_format == 'geo' else 'occ.importShapes'}
+    if source_format != 'geo':
+        options.update(highest_dim_only=False, format=source_format)
+    return options
+
+
+def validate_import_metadata(record):
+    """Older records may omit provenance; never invent their import settings."""
+    kind = record.get('source_format')
+    if kind is not None and (not isinstance(kind, str) or kind not in FORMATS.values()):
+        raise ValueError('Invalid source format metadata.')
+    if 'import_options' not in record:
+        return
+    options = record['import_options']
+    if (not isinstance(options, dict) or kind is None
+            or options.get('backend') != 'gmsh'
+            or not isinstance(options.get('backend_version'), str)
+            or not options['backend_version'].strip()
+            or options.get('read_config_files') is not False
+            or options.get('loader') != ('open' if kind == 'geo' else 'occ.importShapes')):
+        raise ValueError('Invalid geometry import options.')
+    if kind != 'geo' and (options.get('highest_dim_only') is not False or options.get('format') != kind):
+        raise ValueError('Invalid CAD import options.')

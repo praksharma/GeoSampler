@@ -34,6 +34,21 @@ Qt WebEngine renderer and QWebChannel bridge are exercised on Wayland.
 
 ## Neutral CAD import
 
+New imports and generated datasets record `source_hash`, `source_format` and
+`import_options`: the Gmsh version, disabled user configuration loading, and
+the loader used. STEP/BREP/IGES also record the explicit format and
+`highest_dim_only=false` argument. These describe Jorvik's loader settings;
+they do not claim to capture exporter settings or every option inside `.geo`
+scripts. Project archives and NetCDF/NPZ metadata retain these records. Older
+projects can omit import options; unknown historical settings are not inferred.
+
+Generation rejects changed source content or a changed importer version/settings
+when the original import record is available. Reopen the geometry to import it
+again: this clears prior regions and datasets, so numeric entity IDs cannot
+silently acquire old assignments. Automatic entity remapping and optional
+healing remain future work. Main-file hashes do not cover external `.geo`
+Include/Merge dependencies.
+
 File → Open Geometry and the command line accept STEP, Open CASCADE BREP and
 IGES alongside `.geo`. `cad_import.py` is the shared Qt-independent loader used
 by both display and sampling workers. Neutral formats use Gmsh's OCC import and

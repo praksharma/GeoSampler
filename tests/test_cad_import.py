@@ -23,6 +23,9 @@ class CadImportTest(unittest.TestCase):
             with self.subTest(name=name):
                 geometry=load_geometry(FIXTURES/name)
                 self.assertEqual(geometry['source_format'],kind)
+                self.assertEqual(geometry['import_options']['loader'], 'occ.importShapes')
+                self.assertEqual(geometry['import_options']['format'], kind)
+                self.assertIs(geometry['import_options']['highest_dim_only'], False)
                 self.assertEqual(geometry['solid_count'],solid_count)
                 self.assertTrue(any(e['dimension']==2 for e in geometry['entities']))
                 topology = {(e['dimension'], e['tag']): e for e in geometry['topology']}
@@ -45,6 +48,7 @@ class CadImportTest(unittest.TestCase):
                     self.assertEqual(set(sampled['entity_tags']),{entity['tag']})
                     self.assertTrue(np.isfinite(sampled['coordinates']).all())
                     self.assertEqual(sampled['source_format'],kind)
+                    self.assertEqual(sampled['import_options'], geometry['import_options'])
                     batches.append(sampled)
                 request.update(target='interior',entities=[],label='interior')
                 if solid_count:

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import zipfile
 import numpy as np
-from .cad_import import FORMATS
+from .cad_import import FORMATS, validate_import_metadata
 from .sampling_methods import METHODS
 from .topology import validate_topology
 from .regions import validate_regions
@@ -15,6 +15,7 @@ def save_project(path, geometry, areas, state):
     if not geometry:
         raise ValueError('Open geometry before saving a project.')
     validate_topology(geometry)
+    validate_import_metadata(geometry)
     validate_regions(state.get('boundary_regions', []), geometry)
     source = Path(geometry['source'])
     data = source.read_bytes()
@@ -24,6 +25,10 @@ def save_project(path, geometry, areas, state):
     metadata['entities'] = [{k:v for k,v in e.items() if k != 'positions'} for e in geometry['entities']]
     records=[]
     for area, status, visible in areas:
+        validate_import_metadata(area)
+        for field in ('source_format', 'import_options'):
+            if field in area and field in geometry and area[field] != geometry[field]:
+                raise ValueError('Dataset import metadata differs from project geometry.')
         if status == 'Generating':
             raise ValueError('Wait for generation to finish before saving.')
         records.append({'area': {k:v for k,v in area.items() if k not in ('coordinates','entity_tags','normals')},
@@ -62,6 +67,9 @@ def load_project(path):
             raise ValueError('Unsupported geometry format in project.')
         source=archive.read('source/model'+extension)
         geometry=manifest['geometry']
+        validate_import_metadata(geometry)
+        if geometry.get('source_format', FORMATS[extension]) != FORMATS[extension]:
+            raise ValueError('Project source format differs from its embedded geometry.')
         if hashlib.sha256(source).hexdigest()!=geometry['source_hash']:
             raise ValueError('Project geometry checksum does not match.')
         def array(name):
@@ -80,6 +88,10 @@ def load_project(path):
         labels=set();batches=[]
         for i,record in enumerate(manifest['areas']):
             area=record['area'];label=area['label'];status=record['status']
+            validate_import_metadata(area)
+            for field in ('source_format', 'import_options'):
+                if field in area and field in geometry and area[field] != geometry[field]:
+                    raise ValueError('Dataset import metadata differs from project geometry.')
             if not isinstance(label,str) or not label.strip() or label in labels:
                 raise ValueError('Invalid or duplicate region label in project.')
             labels.add(label)

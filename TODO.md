@@ -158,8 +158,11 @@ for BREP, STEP and IGES. Start there without introducing a second geometry backe
       guarantees face names, simulation BC labels or persistent numeric IDs.
 - [x] Let users assign region labels to multiple faces/edges when CAD names are
       absent; separate these assignments from generated dataset labels.
-- [ ] Track source hash, format and import options in saved projects and exports;
-      invalidate/remap region references explicitly after reimport or healing.
+- [x] Track source hash, format and loader options/backend version in projects and
+      exports; reject changed sources/import settings before generation. Reopening
+      geometry clears old region references rather than reusing numeric entity IDs.
+- [ ] Define explicit entity remapping if optional healing or topology-changing
+      reimport is introduced; do not silently retain old region references.
 - [ ] Evaluate direct OCP access only if Gmsh metadata/topology queries become
       insufficient; keep the backend-independent application interface.
 

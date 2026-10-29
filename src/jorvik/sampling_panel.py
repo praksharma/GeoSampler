@@ -204,6 +204,9 @@ class SamplingPanel(QWidget):
         self.label.setText(label)
         geometry = self.window.geometry
         request = {key: geometry[key] for key in ('source', 'source_hash', 'document')}
+        for key in ('source_format', 'import_options'):
+            if key in geometry:
+                request[key] = geometry[key]
         request.update(target=kind, entities=entities, method=self.method.currentData(),
                        count=self.count.value(), seed=self.seed.value(), label=label,
                        resolution=self.resolution.currentData(),compute_mode=self.compute_mode.currentData(),

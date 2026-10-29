@@ -57,6 +57,9 @@ class AreaEditor(QDialog):
         if not interior and not entities:
             QMessageBox.warning(self,'Sampling target','Choose at least one face or edge.');return
         request={k:self.window.geometry[k] for k in ('document','source','source_hash')}
+        for key in ('source_format', 'import_options'):
+            if key in self.window.geometry:
+                request[key] = self.window.geometry[key]
         request.update(label=label,target='interior' if interior else 'selection',entities=[] if interior else entities,
                        method=self.method.currentData(),count=self.count.value(),seed=self.seed.value(),resolution=self.resolution.currentData(),
                        compute_mode=self.compute.currentData(),cpu_threads=self.cores.value() if self.compute.currentData()=='multicore' else 1)
