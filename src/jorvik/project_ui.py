@@ -17,8 +17,8 @@ class ProjectActions(RecoveryActions):
     def refresh_project_actions(self):
         busy=bool(self.project_busy())
         self.open_project_action.setEnabled(not busy)
-        self.save_project_action.setEnabled(not busy and self.geometry is not None)
-        self.save_project_as_action.setEnabled(not busy and self.geometry is not None)
+        self.save_project_action.setEnabled(not busy)
+        self.save_project_as_action.setEnabled(not busy)
 
     def project_state(self, camera=None):
         panel=self.sampling
@@ -110,11 +110,11 @@ class ProjectActions(RecoveryActions):
         return answer == QMessageBox.StandardButton.Discard
 
     def save_project(self, save_as=False):
-        if self.project_busy() or not self.geometry:
+        if self.project_busy():
             return False
         path=self.project_path if not save_as else None
         if not path:
-            filename,_=QFileDialog.getSaveFileName(self,'Save Jorvik project',self.geometry['name']+'.gsproj','Jorvik project (*.gsproj)')
+            filename,_=QFileDialog.getSaveFileName(self,'Save Jorvik project',(self.geometry['name'] if self.geometry else 'Untitled')+'.gsproj','Jorvik project (*.gsproj)')
             if not filename:return False
             path=Path(filename)
             if not path.suffix:path=path.with_suffix('.gsproj')
@@ -127,7 +127,7 @@ class ProjectActions(RecoveryActions):
                 camera=json.loads(camera_json) if camera_json else None
                 areas=[(area,status,self.sampled_areas.items[label].checkState(0)==Qt.CheckState.Checked)
                        for label,(area,status) in self.sampled_areas.areas.items()]
-                state = self.project_state(camera)
+                state = self.project_state(camera) if self.geometry is not None else {}
                 self.project_io_call(lambda: save_project(path,self.geometry,areas,state))
                 self.project_path=Path(path)
                 self.setWindowTitle('Jorvik — '+self.project_path.name)
@@ -154,7 +154,7 @@ class ProjectActions(RecoveryActions):
         filename,_=QFileDialog.getOpenFileName(self,'Open Jorvik project','','Jorvik project (*.gsproj)')
         if filename:self.load_project_file(filename)
 
-    def load_project_file(self, filename):
+    def load_project_file(self, filename, *, raise_errors=False):
         if self.project_busy():return
         cache=None
         try:
@@ -164,6 +164,17 @@ class ProjectActions(RecoveryActions):
             # Saving may have replaced this same file while the prompt was open.
             if dirty: manifest,source=self.project_io_call(lambda: load_project(filename))
             geometry=manifest['geometry']
+            if geometry is None:
+                old_cache = self.project_cache
+                self.show_geometry(None)
+                self.project_cache = None
+                if old_cache is not None: old_cache.cleanup()
+                self.project_path = Path(filename).resolve()
+                self.setWindowTitle('Jorvik — ' + self.project_path.name)
+                self.statusBar().showMessage('Empty project opened — import geometry to begin.')
+                self.mark_project_clean()
+                self.refresh_project_actions()
+                return True
             # Retain a valid original path for relative .geo dependencies; otherwise
             # restore the embedded main CAD source without extracting arbitrary paths.
             path=Path(geometry['source'])
@@ -236,6 +247,7 @@ class ProjectActions(RecoveryActions):
             return True
         except Exception as error:
             if cache is not None and cache is not self.project_cache:cache.cleanup()
+            if raise_errors: raise
             QMessageBox.warning(self,'Could not open project',str(error))
             return False
 

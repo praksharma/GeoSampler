@@ -97,7 +97,8 @@ function appearance(config){
 function loadGeometry(data){
   translationPreview=null;previewOffset.set(0,0,0);
   for(const object of objects){scene.remove(object);object.traverse(part=>{part.geometry?.dispose();part.material?.dispose();});}
-  objects=[];faces=[];edges=[];selected.clear();hover=null;down=null;documentId=data.document;
+  objects=[];faces=[];edges=[];selected.clear();hover=null;down=null;documentId=data?.document??null;
+  if(!data){center.set(0,0,0);radius=15;grid.position.set(0,0,0);grid.scale.setScalar(1);axes.position.set(0,0,0);axes.scale.setScalar(1);orient(0);return;}
   const box=new THREE.Box3();
   for(const entity of data.entities){
     if(!entity.positions.length)continue;

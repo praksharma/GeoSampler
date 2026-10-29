@@ -17,6 +17,8 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 ```sh
 uv sync
 uv run jorvik
+# Open an existing project document:
+uv run jorvik path/to/model.gsproj
 ```
 
 Open a fixture directly:

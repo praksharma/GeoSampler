@@ -1,6 +1,8 @@
 """Versioned portable project archives, numeric arrays without pickle or CAD execution."""
 import hashlib
 import json
+import os
+import tempfile
 from pathlib import Path
 import zipfile
 import numpy as np
@@ -12,8 +14,16 @@ from .export import atomic_write, to_xarray
 
 
 def save_project(path, geometry, areas, state):
-    if not geometry:
-        raise ValueError('Open geometry before saving a project.')
+    if geometry is None:
+        if areas or state != {}:
+            raise ValueError('Empty projects cannot contain datasets or geometry state.')
+        manifest = {'schema_version': 3, 'geometry': None, 'areas': [],
+                    'state': {}, 'source_extension': None}
+        def write_empty(temporary):
+            with zipfile.ZipFile(temporary, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr('manifest.json', json.dumps(manifest, allow_nan=False))
+        atomic_write(path, write_empty)
+        return
     validate_topology(geometry)
     validate_import_metadata(geometry)
     validate_regions(state.get('boundary_regions', []), geometry)
@@ -56,12 +66,39 @@ def save_project(path, geometry, areas, state):
     atomic_write(path,write)
 
 
+def create_empty_project(path, *, overwrite=False):
+    """Create a geometry-free .gsproj without Qt; refuse replacement by default.
+
+    Return the path. Both creation and explicit replacement are atomic. Existing
+    project readers continue to accept populated schema 1/2 documents unchanged.
+    """
+    path = Path(path)
+    if path.suffix.lower() != '.gsproj':
+        raise ValueError('Choose a Jorvik project (.gsproj) file.')
+    if overwrite:
+        save_project(path, None, [], {})
+    else:
+        # Publish a complete archive with an exclusive hard link. Unlike a prior
+        # exists() check plus replace(), this cannot clobber a concurrent creator.
+        with tempfile.TemporaryDirectory(prefix='.jorvik-create-', dir=path.parent) as directory:
+            temporary = Path(directory) / 'empty.gsproj'
+            save_project(temporary, None, [], {})
+            os.link(temporary, path)
+    return path
+
+
 def load_project(path):
     """Fully validate before returning a candidate; never mutate the active project."""
     with zipfile.ZipFile(path) as archive:
         manifest=json.loads(archive.read('manifest.json'))
-        if manifest.get('schema_version') not in (1, 2):
+        if not isinstance(manifest, dict) or manifest.get('schema_version') not in (1, 2, 3):
             raise ValueError('Unsupported Jorvik project version.')
+        if manifest.get('schema_version') == 3 and manifest.get('geometry', 'missing') is None:
+            if (manifest.get('areas') != [] or manifest.get('state') != {}
+                    or 'source_extension' not in manifest or manifest['source_extension'] is not None
+                    or archive.namelist() != ['manifest.json']):
+                raise ValueError('Invalid empty project document.')
+            return manifest, None
         extension=manifest['source_extension']
         if extension not in FORMATS:
             raise ValueError('Unsupported geometry format in project.')

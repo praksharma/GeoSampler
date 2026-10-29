@@ -103,8 +103,7 @@ class Viewport(QWidget):
         self.flush_geometry()
 
     def flush_geometry(self):
-        if self.geometry:
-            self.call("loadGeometry", self.geometry)
+        self.call("loadGeometry", self.geometry)
         self.call("setBoundaryRegions", self.boundary_regions)
         self.call("setMode", self.mode)
         self.call("setSelection", self.selection)

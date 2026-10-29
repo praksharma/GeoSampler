@@ -138,7 +138,7 @@ class SamplingPanel(QWidget):
         self.target.blockSignals(True)
         while self.target.count() > 2:
             self.target.removeItem(2)
-        for group in self.window.geometry['groups']:
+        for group in (self.window.geometry['groups'] if self.window.geometry else []):
             if group['dimension'] in (1, 2):
                 kind = 'edges' if group['dimension'] == 1 else 'faces'
                 name = group['name'] or f"Group {group['tag']}"

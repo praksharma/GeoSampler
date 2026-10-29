@@ -346,6 +346,11 @@ are outside the initial release; use the verified neutral export formats instead
 
 ## Project persistence and sampled-area editing
 
+- [x] Empty `.gsproj` documents and Qt-independent creation API; retain the same
+      document path and unsaved-change protection when importing the first geometry.
+- [x] Launch with `.gsproj` or supported geometry files using normal loaders;
+      report invalid launch files with nonzero status and preserve their contents.
+
 - [x] File menu save/open/save-as `.gsproj` archives with CAD and numeric arrays.
 - [x] Restore cached topology and samples without regeneration, including moved sources.
 - [x] Preserve recipes, colours, visibility, selection, camera, layout and translation setup.

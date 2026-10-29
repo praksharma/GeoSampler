@@ -3,7 +3,7 @@ import argparse
 import sys
 from pathlib import Path
 import json
-from PySide6.QtCore import QProcess, QSettings, Qt, QSize, QSignalBlocker
+from PySide6.QtCore import QProcess, QSettings, Qt, QSize, QSignalBlocker, QTimer
 from PySide6.QtGui import QActionGroup, QColor
 from PySide6.QtWidgets import (QApplication, QComboBox, QDockWidget, QLabel,
     QMainWindow, QMessageBox, QToolBar, QTreeWidget, QTreeWidgetItem, QFileDialog, QAbstractItemView, QScrollArea, QSizePolicy, QSplitter, QMenu, QInputDialog, QColorDialog, QPushButton, QWidget, QVBoxLayout)
@@ -530,7 +530,7 @@ class MainWindow(ProjectActions, QMainWindow):
         if path:
             self.load_geometry(path)
 
-    def load_geometry(self, path):
+    def load_geometry(self, path, *, on_error=None):
         if self.import_process is not None or self.sampling.process is not None or self.saving_project or self.project_io is not None:
             return
         process = QProcess(self)
@@ -539,15 +539,15 @@ class MainWindow(ProjectActions, QMainWindow):
         self.open_action.setEnabled(False)
         self.sampling.generate.setEnabled(False)
         self.statusBar().showMessage("Opening " + Path(path).name + "…")
-        process.finished.connect(lambda code, status: self.import_finished(process, code))
-        process.errorOccurred.connect(lambda error: self.import_failed_start(process) if error == QProcess.ProcessError.FailedToStart else None)
+        process.finished.connect(lambda code, status: self.import_finished(process, code, on_error))
+        process.errorOccurred.connect(lambda error: self.import_failed_start(process, on_error) if error == QProcess.ProcessError.FailedToStart else None)
         process.start(sys.executable, ["-m", "jorvik.geometry", str(path)])
 
-    def import_failed_start(self, process):
+    def import_failed_start(self, process, on_error=None):
         if self.import_process is process:
-            self.import_finished(process, -1)
+            self.import_finished(process, -1, on_error)
 
-    def import_finished(self, process, code):
+    def import_finished(self, process, code, on_error=None):
         if self.import_process is not process:
             return
         self.import_process = None
@@ -561,10 +561,18 @@ class MainWindow(ProjectActions, QMainWindow):
             if not self.confirm_unsaved_changes():
                 self.statusBar().showMessage('Opening cancelled — current workspace retained')
                 return
+            empty_project_path = self.project_path if self.geometry is None else None
             self.show_geometry(geometry)
+            if empty_project_path is not None:
+                self.project_path = empty_project_path
+                self.saved_digest = None  # Importing is an unsaved edit of this document.
+                self.setWindowTitle('Jorvik — ' + self.project_path.name)
         except (ValueError, KeyError) as error:
             self.statusBar().showMessage("Import failed — previous geometry retained")
-            QMessageBox.warning(self, "Could not open geometry", str(error))
+            if on_error is not None:
+                on_error(str(error))
+            else:
+                QMessageBox.warning(self, "Could not open geometry", str(error))
         finally:
             process.deleteLater()
 
@@ -582,6 +590,17 @@ class MainWindow(ProjectActions, QMainWindow):
         self.items.clear()
         self.tree.blockSignals(True)
         self.tree.clear()
+        if geometry is None:
+            self.tree.blockSignals(False)
+            self.view.set_geometry_visibility({'hiddenFaces': [], 'isolatedFaces': None, 'isolatedEntities': None})
+            self.view.set_geometry(None)
+            self.sampling.clear_batches()
+            self.sampling.refresh_targets()
+            self.sampling.generate.setEnabled(False)
+            self.sampling.summary.setText('Open geometry to begin.')
+            self.setWindowTitle('Jorvik — Untitled')
+            self.mark_project_clean()
+            return
         parent = QTreeWidgetItem(self.tree, [geometry["name"]])
         for dimension, label in ((2, "Faces"), (1, "Edges")):
             group = QTreeWidgetItem(parent, [label])
@@ -719,10 +738,17 @@ class MainWindow(ProjectActions, QMainWindow):
 
 def main():
     parser = argparse.ArgumentParser(description="Jorvik desktop application")
-    parser.add_argument("geometry", nargs="?", help="Gmsh, STEP, Open CASCADE BREP or IGES file to open")
+    parser.add_argument("document", nargs="?", help="Jorvik .gsproj project, Gmsh, STEP, Open CASCADE BREP or IGES file to open")
     parser.add_argument("--version", action="version", version=f"Jorvik {__version__}")
     parser.add_argument("--software-rendering", action="store_true", help="Use software rendering for the 3D viewport")
     args = parser.parse_args()
+    document = None
+    if args.document:
+        from .cli import launch_document
+        try:
+            document = launch_document(args.document)
+        except ValueError as error:
+            parser.error(str(error))
     configure_graphics("software" if args.software_rendering else "auto")
     from .shutdown import SignalShutdown
     shutdown = SignalShutdown()
@@ -738,9 +764,20 @@ def main():
         window = MainWindow(settings)
         shutdown.window = window
         window.show()
-        if args.geometry:
-            window.load_geometry(args.geometry)
-        code = application.exec()
+        if document and document[0] == 'project':
+            try:
+                window.load_project_file(document[1], raise_errors=True)
+            except Exception as error:
+                print(f'Could not open project {document[1]}: {error}', file=sys.stderr)
+                code = 1
+                window.close()
+        elif document:
+            def geometry_launch_failed(message):
+                print(f'Could not open geometry {document[1]}: {message}', file=sys.stderr)
+                QTimer.singleShot(0, lambda: application.exit(1))
+            window.load_geometry(document[1], on_error=geometry_launch_failed)
+        if code is None:
+            code = application.exec()
     finally:
         shutdown.restore(terminating=code is not None)
     sys.exit(code)
